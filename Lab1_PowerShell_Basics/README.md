@@ -1,7 +1,6 @@
 # Lab 1 – PowerShell Basics and Gathering Host Information
 
-This repository contains the work for **Lab 1** of *CYB 631: Automating Information Security with Python and Shell Scripting* at Pace University.  
-The goal of this lab is to build a foundation in **PowerShell scripting** for system administration, host monitoring, and security automation.
+This lab is to build a foundation in **PowerShell scripting** for system administration, host monitoring, and security automation.
 
 ---
 
