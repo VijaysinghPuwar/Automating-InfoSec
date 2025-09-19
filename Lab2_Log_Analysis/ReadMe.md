@@ -1,15 +1,6 @@
 # Lab 2 – Analyzing Logs and Other Administrators’ Tasks
 
-This repository contains the work for **Lab 2** of *CYB 631: Automating Information Security with Python and Shell Scripting* at Pace University.  
-The lab builds upon the basics from Lab 1 and introduces more advanced **PowerShell scripting** concepts such as arrays, modules, event logs, and system administration automation.
-
----
-
-## 📘 Course Information
-- **Course:** CYB 631 – Automating Information Security with Python and Shell Scripting  
-- **Instructor:** Prof. Alex Tsekhansky  
-- **Student:** Vijaysingh Puwar  
-- **Date:** September 12, 2025  
+This lab builds upon the basics from Lab 1 and introduces more advanced **PowerShell scripting** concepts such as arrays, modules, event logs, and system administration automation.
 
 ---
 
