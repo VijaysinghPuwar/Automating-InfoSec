@@ -4,14 +4,6 @@ This lab is to build a foundation in **PowerShell scripting** for system adminis
 
 ---
 
-## 📘 Course Information
-- **Course:** CYB 631 – Automating Information Security with Python and Shell Scripting  
-- **Instructor:** Prof. Alex Tsekhansky  
-- **Student:** Vijaysingh Puwar  
-- **Date:** September 4, 2025  
-
----
-
 ## 🔑 Lab Objectives
 This lab introduced me to the fundamentals of PowerShell by covering:
 
