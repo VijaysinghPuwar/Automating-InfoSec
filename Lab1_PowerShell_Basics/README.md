@@ -63,6 +63,7 @@ Lab1\_PowerShell\_Basics/
 ├── .-nametest1.txt        # Example text file (Hello! World)
 ├── code.txt               # Handle counting script snippet
 ├── script1.txt.ps1        # PowerShell script to sum process handles
+├── README.md              # Short-intro about repo
 └── CYB-631-Lab1-VijaysinghPuwar.pdf  # Full lab report
 
 ```
