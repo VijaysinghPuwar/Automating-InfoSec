@@ -1,15 +1,6 @@
 # Lab 3 – Managing and Hardening Hosts
 
-This repository contains the work for **Lab 3** of *CYB 631: Automating Information Security with Python and Shell Scripting* at Pace University.  
-The lab focused on **Windows host hardening** using PowerShell, covering directory services, registry, WMI/CIM, and firewall configuration through both manual and automated methods.
-
----
-
-## 📘 Course Information
-- **Course:** CYB 631 – Automating Information Security with Python and Shell Scripting  
-- **Instructor:** Prof. Alex Tsekhansky  
-- **Student:** Vijaysingh Puwar  
-- **Date:** September 2025  
+This lab focused on **Windows host hardening** using PowerShell, covering directory services, registry, WMI/CIM, and firewall configuration through both manual and automated methods.
 
 ---
 
