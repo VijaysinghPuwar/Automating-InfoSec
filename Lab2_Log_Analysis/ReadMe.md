@@ -58,10 +58,7 @@ This lab focused on expanding PowerShell capabilities to support **system admini
 ```
 
 Lab2\_Analyzing\_Logs/
-├── Get-DiskUsage.ps1         # Script for calculating directory usage
-├── showtoday.ps1             # Script to display today's date with optional parameters
-├── Show-Today.psm1           # Packaged PowerShell module
-├── sys\_admin.ps1             # Main system admin automation script
+├── ReadMe.md         # Short Intro about the repo
 └── CYB631-Lab2\_Puwar.pdf     # Full lab report
 
 ```
