@@ -16,6 +16,17 @@ repository was public before remediation, the original values are treated as
 permanently disclosed rather than merely deleted — rotation, not deletion, is what
 actually closed this.
 
+One detail from the cleanup is worth recording, because it nearly left the job half
+done. The repository had been reorganised twice over its history, so the artifacts
+existed under two directory layouts (`Lab 4: Confidentiality/Files/` and
+`Lab_4_Confidentiality/Script/`). A first purge run against an explicitly enumerated
+list of paths reported success while the earlier layout's copies survived untouched;
+the enumeration had silently truncated a path containing spaces. What caught it was
+scanning the *content* of every blob remaining in history for the key bytes and the
+ciphertext header, rather than re-checking the list of paths. Path-based enumeration
+only ever proves something about the paths you thought to enumerate — for secrets,
+content-based verification is the check that actually holds.
+
 ## What prevents a recurrence
 
 Three independent controls, because no single one covers both failure modes. Key
