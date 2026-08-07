@@ -1,0 +1,42 @@
+title = "Automating-InfoSec secret scanning"
+
+# Start from gitleaks' built-in ruleset, then add a rule for the PowerShell
+# artifact that actually leaked from this repo. See SECURITY.md.
+[extend]
+useDefault = true
+
+# ConvertFrom-SecureString emits a fixed 32-hex-character header before the
+# base64 payload. Detecting the header catches an exported SecureString whether
+# it was written to password.txt, secret.enc, pasted into a README, or renamed.
+# Verified against the pre-remediation history: this rule fires on all four
+# occurrences across both historical directory layouts.
+[[rules]]
+id = "powershell-securestring-export"
+description = "PowerShell ConvertFrom-SecureString export (AES-encrypted SecureString)"
+regex = '''76492d1116743f0423413b16050a5345'''
+tags = ["powershell", "secret", "encrypted-credential"]
+
+# NOTE: key material is caught by path, not by content -- a raw 16-byte AES key
+# has no distinguishing text pattern. gitleaks 8.30.1 silently drops path-based
+# rules when `useDefault = true` is set (verified: 2 findings without extend,
+# 0 with it, regex present or not). Rather than give up the default ruleset,
+# filename detection lives in tools/Test-ForbiddenPath.ps1, which runs in both
+# the pre-commit hook and CI.
+
+[allowlist]
+description = "Legitimate lab evidence that carries no private key"
+paths = [
+  # Public certificate export. Public key only -- this is the artifact the CMS
+  # exercise is supposed to share.
+  '''(?i)\.cer$''',
+  # Authenticode signature block appended by Set-AuthenticodeSignature. Base64,
+  # but it is a detached signature plus public certificate chain, not a secret.
+  '''(?i)(^|/)myscript\.ps1$''',
+  # CMS ciphertext encrypted to a public key. Inert without the private key,
+  # which lives only in the signer's certificate store.
+  '''(?i)(^|/)p1\.txt$''',
+  # This config quotes the SecureString header as a detection pattern.
+  '''(^|/)\.gitleaks\.toml$''',
+  # SECURITY.md documents the incident and names the affected files.
+  '''(^|/)SECURITY\.md$''',
+]

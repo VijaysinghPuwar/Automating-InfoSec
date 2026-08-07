@@ -1,0 +1,20 @@
+# Paths that must never be committed. One POSIX extended regex per line;
+# blank lines and lines starting with # are ignored.
+#
+# Consumed by both .githooks/pre-commit (grep -E) and tools/Test-ForbiddenPath.ps1
+# (CI), so the two cannot drift apart. Keep the syntax to the common subset of
+# POSIX ERE and .NET regex.
+#
+# Rationale: the AES key and the ciphertext it decrypted were committed side by
+# side, which made the password trivially recoverable. See SECURITY.md.
+
+# Key material from the Lab 4 exercise, in either encoding it was written in.
+(^|/)keyfile\.[^/]+$
+
+# The exported credential and SecureString ciphertext.
+(^|/)password\.txt$
+(^|/)secret\.enc$
+
+# Key and container formats generally. Note .cer is deliberately absent:
+# a certificate export carries the public key only and is valid lab evidence.
+\.(bin|enc|pfx|p12|key|pem|snk)$
