@@ -1,0 +1,28 @@
+# Key material and encrypted artifacts.
+# Lab 4 generates these locally via
+# Lab_4_Confidentiality/Script/generate-lab4-artifacts.ps1.
+# They must never be committed: the AES key and the ciphertext it decrypts were
+# previously committed side by side, which made recovery trivial. See SECURITY.md.
+*.bin
+*.enc
+*.pfx
+*.key
+*.pem
+*.snk
+
+# Named artifacts from the Lab 4 exercise specifically.
+keyfile.*
+password.txt
+secret.enc
+
+# Public certificates are intentionally NOT ignored: *.cer carries no private key
+# and is committed as lab evidence.
+
+# PowerShell / editor noise
+*.psd1.bak
+.vscode/
+.idea/
+.DS_Store
+
+# Local agent settings
+.claude/settings.local.json
