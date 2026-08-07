@@ -162,6 +162,7 @@ Unprotect-CmsMessage -Path .\evidence\p1.txt
 
 ## 🔒 Security notes & gotchas
 
+* **Figures 11 and 14 of the report PDF in this repo were redacted after publication**: both showed a decrypted plaintext credential in console output, and the repo's copy now has that value blacked out in the underlying bitmap — see [SECURITY.md](../SECURITY.md).
 * **Never commit** private keys, `*.pfx`, or raw AES keys (`keyfile.bin`) to Git.
 * Export **public** certs only (`.cer`) when sharing for CMS encryption.
 * AES keys must be **16/24/32 bytes**; enforce length checks.
