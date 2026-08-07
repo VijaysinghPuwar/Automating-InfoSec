@@ -1,0 +1,45 @@
+#!/bin/sh
+# Blocks commits that add key material or an exported credential.
+#
+# Install with:  git config core.hooksPath .githooks
+#
+# Two independent checks, because neither alone is sufficient:
+#   1. Path check  - catches raw key files, which have no content signature.
+#   2. gitleaks    - catches secrets by content, including a SecureString export
+#                    that was renamed to something innocuous.
+set -e
+
+repo_root=$(git rev-parse --show-toplevel)
+patterns="$repo_root/tools/forbidden-paths.txt"
+status=0
+
+staged=$(git diff --cached --name-only --diff-filter=AM)
+[ -z "$staged" ] && exit 0
+
+# --- 1. path check -----------------------------------------------------------
+if [ -f "$patterns" ]; then
+    # Strip comments and blank lines, then match staged paths against what is left.
+    res=$(grep -vE '^\s*(#|$)' "$patterns" || true)
+    if [ -n "$res" ]; then
+        offenders=$(printf '%s\n' "$staged" | grep -E "$(printf '%s' "$res" | paste -sd'|' -)" || true)
+        if [ -n "$offenders" ]; then
+            echo "pre-commit: refusing to commit key material or credential files:"
+            printf '  %s\n' $offenders
+            echo "  These are generated locally. See SECURITY.md."
+            status=1
+        fi
+    fi
+fi
+
+# --- 2. content check --------------------------------------------------------
+if command -v gitleaks >/dev/null 2>&1; then
+    if ! gitleaks git --staged --config "$repo_root/.gitleaks.toml" --no-banner --redact 2>&1; then
+        echo "pre-commit: gitleaks found a secret in the staged changes."
+        status=1
+    fi
+else
+    echo "pre-commit: WARNING - gitleaks not installed, content scan skipped."
+    echo "  brew install gitleaks"
+fi
+
+exit $status
