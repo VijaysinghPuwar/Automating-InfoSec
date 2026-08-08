@@ -6,7 +6,7 @@ Hands-on lab demonstrating confidentiality and integrity controls on Windows usi
 
 ---
 
-## 🔍 What this lab covers
+## What this lab covers
 
 * **File Integrity**
 
@@ -34,30 +34,32 @@ Hands-on lab demonstrating confidentiality and integrity controls on Windows usi
 
 ---
 
-## 🗂️ Repo structure (suggested)
+## Contents
 
 ```
-.
-├─ /scripts
-│  ├─ hash_report.ps1            # Builds the File | Hash report
-│  ├─ verify_download.ps1        # Streams a URL and computes SHA-256
-│  ├─ securestring_aes_demo.ps1  # Key gen, encrypt, decrypt round-trip
-│  ├─ sign_me.ps1                # Sample script to sign ("I am on cloud nine!")
-│  └─ cms_demo.ps1               # Protect/Unprotect-CmsMessage workflow
-├─ /evidence
-│  ├─ hashes.txt                 # Sample output of the report
-│  ├─ signature_status.png       # Signed-script verification screenshot
-│  ├─ p1.txt                     # CMS-encrypted block (Base64 PEM-like)
-│  └─ cyberusr.cer               # Exported public cert (no private key)
+labs/04-confidentiality/
 ├─ README.md
-└─ LICENSE
+├─ scripts/
+│  ├─ lab04-transcript.ps1          # The commands as run during the lab
+│  └─ generate-lab4-artifacts.ps1   # Regenerates key/ciphertext demo files locally
+└─ evidence/
+   ├─ myscript.ps1                  # Authenticode-signed script (signature block intact)
+   ├─ cyberusr.cer                  # Exported public certificate, no private key
+   └─ p1.txt                        # CMS ciphertext encrypted to that certificate
 ```
 
-> If you’re publishing to GitHub Pages or Lovable, keep screenshots in `/evidence` and link them from this README.
+`lab04-transcript.ps1` is a record of the session, not a runnable program: it
+contains interactive prompts and one `certmgr.msc` launch. The full write-up is
+[docs/reports/cyb631-lab4-puwar.pdf](../../docs/reports/cyb631-lab4-puwar.pdf).
+
+The key and ciphertext artifacts the lab produced are deliberately absent —
+they were removed and purged from history because the key was committed next to
+the ciphertext it decrypted. Run `scripts/generate-lab4-artifacts.ps1` to rebuild
+equivalents locally from throwaway values. See [SECURITY.md](../../SECURITY.md).
 
 ---
 
-## 🚀 Quick start
+## Quick start
 
 > Run PowerShell **as Administrator**.
 
@@ -150,7 +152,7 @@ Unprotect-CmsMessage -Path .\evidence\p1.txt
 
 ---
 
-## ✅ Learning outcomes
+## Learning outcomes
 
 * Explain where hashing fits in **integrity** controls and prove equality via SHA-256.
 * Compare **DPAPI-style** implicit encryption vs explicit AES key management.
@@ -160,9 +162,9 @@ Unprotect-CmsMessage -Path .\evidence\p1.txt
 
 ---
 
-## 🔒 Security notes & gotchas
+## Security notes & gotchas
 
-* **Figures 11 and 14 of the report PDF in this repo were redacted after publication**: both showed a decrypted plaintext credential in console output, and the repo's copy now has that value blacked out in the underlying bitmap — see [SECURITY.md](../SECURITY.md).
+* **Figures 11 and 14 of the report PDF in this repo were redacted after publication**: both showed a decrypted plaintext credential in console output, and the repo's copy now has that value blacked out in the underlying bitmap — see [SECURITY.md](../../SECURITY.md).
 * **Never commit** private keys, `*.pfx`, or raw AES keys (`keyfile.bin`) to Git.
 * Export **public** certs only (`.cer`) when sharing for CMS encryption.
 * AES keys must be **16/24/32 bytes**; enforce length checks.
@@ -171,7 +173,7 @@ Unprotect-CmsMessage -Path .\evidence\p1.txt
 
 ---
 
-## 🛠️ Requirements
+## Requirements
 
 * Windows 10/11 or Windows Server 2022 (Admin PowerShell)
 * PowerShell 5.1+ (or 7.x with compatible modules)
@@ -179,9 +181,14 @@ Unprotect-CmsMessage -Path .\evidence\p1.txt
 
 ---
 
-## 📸 Evidence (samples)
+## Evidence
 
-* `evidence/hashes.txt` — SHA-256 report
-* `evidence/signature_status.png` — Signed script verification
-* `evidence/p1.txt` — CMS-encrypted message (Base64 block)
-* `evidence/cyberusr.cer` — Exported public certificate
+* `evidence/myscript.ps1` — signed with `Set-AuthenticodeSignature` and a DigiCert
+  timestamp; the signature block is intact, so `Get-AuthenticodeSignature` still
+  reports on it. The signer is a self-signed lab certificate, so expect
+  `UnknownError` unless that certificate is trusted on the machine checking it.
+* `evidence/cyberusr.cer` — exported public certificate, no private key.
+* `evidence/p1.txt` — CMS ciphertext encrypted to `cyberusr`. It cannot be
+  decrypted from this repository: the private key stayed in the certificate store
+  of the machine that generated it, which is the property the exercise
+  demonstrates.

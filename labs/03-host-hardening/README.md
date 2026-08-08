@@ -4,7 +4,7 @@ This lab focused on **Windows host hardening** using PowerShell, covering direct
 
 ---
 
-## 🔑 Lab Objectives
+## Lab Objectives
 The lab introduced a series of exercises to explore **system administration and security automation**:
 
 1. **Environment Setup**
@@ -46,18 +46,23 @@ The lab introduced a series of exercises to explore **system administration and 
 
 ---
 
-## 📂 Repository Contents
-```
-
-Lab3\_Managing\_Hosts/
-├── firewall\_ReadMe.md        # Short Info here
-└── CYB631-Lab3\_Puwar.pdf      # Full lab report
+## Contents
 
 ```
+labs/03-host-hardening/
+└── README.md
+```
+
+The full write-up is
+[docs/reports/cyb631-lab3-puwar.pdf](../../docs/reports/cyb631-lab3-puwar.pdf).
+
+No scripts from this lab were committed. The `New-NetFirewallRule` and
+`Set-NetFirewallProfile` commands are legible in the report's screenshots
+(pages 24-27) but were never saved to a file.
 
 ---
 
-## 📝 Reflection
+## Reflection
 - **What I liked:**  
   The lab tied together multiple Windows hardening techniques, showing both manual and automated approaches. Automating firewall rules with PowerShell demonstrated the efficiency of scripting in enterprise environments.  
 
@@ -71,16 +76,11 @@ Lab3\_Managing\_Hosts/
 
 ---
 
-## 📚 References
+## References
 - Microsoft. [Active Directory Lightweight Directory Services Overview](https://learn.microsoft.com/en-us/windows-server/identity/ad-lds/active-directory-lightweight-directory-services-overview)  
 - Microsoft. [Windows PowerShell commands for managing Windows Firewall](https://learn.microsoft.com/en-us/powershell/module/netsecurity)  
 - Microsoft. [Windows Management Instrumentation (WMI)](https://learn.microsoft.com/en-us/windows/win32/wmisdk/wmi-start-page)  
 - Microsoft. [Windows registry information for advanced users](https://support.microsoft.com/help/256986/windows-registry-information-for-advanced-users)  
 - NinjaOne. [Configure firewall exceptions with PowerShell](https://www.ninjaone.com/script-hub/configure-firewall-exceptions-with-powershell)  
 - Woshub. [Manage Windows Defender Firewall with PowerShell](https://woshub.com/manage-windows-firewall-powershell)  
-- Wong, J. (2021). *Managing Windows Firewall Rules with PowerShell: Beyond the GUI*. ITPro Today.  
-
----
-
-
-Do you want me to **also add snippets of the firewall script** (like the actual `New-NetFirewallRule` commands) in the README so recruiters see working code right away?
+- Wong, J. (2021). *Managing Windows Firewall Rules with PowerShell: Beyond the GUI*. ITPro Today.

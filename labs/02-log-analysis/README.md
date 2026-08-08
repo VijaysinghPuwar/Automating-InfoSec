@@ -4,7 +4,7 @@ This lab builds upon the basics from Lab 1 and introduces more advanced **PowerS
 
 ---
 
-## 🔑 Lab Objectives
+## Lab Objectives
 This lab focused on expanding PowerShell capabilities to support **system administration and security monitoring**:
 
 1. **PowerShell Objects and Data Structures**
@@ -45,18 +45,23 @@ This lab focused on expanding PowerShell capabilities to support **system admini
 
 ---
 
-## 📂 Repository Contents
-```
-
-Lab2\_Analyzing\_Logs/
-├── ReadMe.md         # Short Intro about the repo
-└── CYB631-Lab2\_Puwar.pdf     # Full lab report
+## Contents
 
 ```
+labs/02-log-analysis/
+└── README.md
+```
+
+The full write-up is
+[docs/reports/cyb631-lab2-puwar.pdf](../../docs/reports/cyb631-lab2-puwar.pdf).
+
+No scripts from this lab were committed. `sys_admin.ps1`, `Get-DiskUsage.ps1`,
+`showtoday.ps1` and `Show-Today.psm1` are described in the report but exist only
+as screenshots inside it.
 
 ---
 
-## 📝 Reflection
+## Reflection
 - **What I liked:**  
   The lab connected multiple scripting techniques into a structured workflow. Creating `sys_admin.ps1` showed how small scripts can be combined into powerful automation tools.  
 
@@ -70,11 +75,7 @@ Lab2\_Analyzing\_Logs/
 
 ---
 
-## 📚 References
+## References
 - Holmes, L. (2021). *Windows PowerShell Cookbook* (4th ed.). O’Reilly Media.  
 - Microsoft. (2023). [Table of basic PowerShell commands](https://devblogs.microsoft.com/scripting/table-of-basic-powershell-commands/)  
-- Pace University. (2025). *CYB 631 Lab 2: Analyzing Logs and Other Administrators’ Tasks*  
-
----
-
-Do you want me to also include a **sample output snippet** from `sys_admin.ps1` (like the report header + top 5 services) in the README so it looks more practical when recruiters or classmates check it?
+- Pace University. (2025). *CYB 631 Lab 2: Analyzing Logs and Other Administrators’ Tasks*

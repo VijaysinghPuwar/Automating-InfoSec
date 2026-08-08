@@ -4,7 +4,7 @@ This lab is to build a foundation in **PowerShell scripting** for system adminis
 
 ---
 
-## 🔑 Lab Objectives
+## Lab Objectives
 This lab introduced me to the fundamentals of PowerShell by covering:
 
 1. **PowerShell Basics**
@@ -47,21 +47,24 @@ This lab introduced me to the fundamentals of PowerShell by covering:
 
 ---
 
-## 📂 Repository Contents
-````
-
-Lab1\_PowerShell\_Basics/
-├── .-nametest1.txt        # Example text file (Hello! World)
-├── code.txt               # Handle counting script snippet
-├── script1.txt.ps1        # PowerShell script to sum process handles
-├── README.md              # Short-intro about repo
-└── CYB-631-Lab1-VijaysinghPuwar.pdf  # Full lab report
+## Contents
 
 ```
+labs/01-powershell-fundamentals/
+├── README.md
+└── scripts/
+    └── script1.ps1        # Sums handles across processes whose name starts with N
+```
+
+The full write-up is
+[docs/reports/cyb631-lab1-puwar.pdf](../../docs/reports/cyb631-lab1-puwar.pdf).
+
+`cputime.ps1` and the scratch files created during the exercises are described in
+the report but were never committed.
 
 ---
 
-## 📝 Reflection
+## Reflection
 - **What I liked:**  
   The lab progressed logically from basic commands → object operations → scripting. It showed how even simple scripts can be powerful for monitoring and automation.  
 
@@ -73,7 +76,7 @@ Lab1\_PowerShell\_Basics/
 
 ---
 
-## 📚 References
+## References
 - Holmes, L. (2021). *Windows PowerShell Cookbook* (4th ed.). O’Reilly Media.  
 - Microsoft. (2023). [Table of basic PowerShell commands](https://devblogs.microsoft.com/scripting/table-of-basic-powershell-commands/)  
 - Pace University. (2023). *CYB 631 Lab 1: PowerShell Basics and Gathering Host Information*  
