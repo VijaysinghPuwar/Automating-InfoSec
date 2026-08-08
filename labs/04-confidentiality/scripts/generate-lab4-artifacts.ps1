@@ -72,7 +72,7 @@ $demoPassword = 'demo-pw-' + [guid]::NewGuid().ToString('N').Substring(0, 12)
 
 $results = [System.Collections.Generic.List[object]]::new()
 
-function Add-Result {
+function AddResult {
     param([string]$File, [string]$Description, [int]$Bytes)
     $results.Add([PSCustomObject]@{
         File        = $File
@@ -81,34 +81,50 @@ function Add-Result {
     })
 }
 
+function NewSecureString {
+    # Built a character at a time rather than via
+    # ConvertTo-SecureString -AsPlainText -Force. The -Force form takes the secret
+    # as an ordinary [string], which is immutable and stays in managed memory
+    # until the GC happens to collect it. This keeps the value out of a String
+    # entirely, which is the practice the lab is meant to demonstrate.
+    param([char[]]$Character)
+    $secure = [System.Security.SecureString]::new()
+    foreach ($c in $Character) { $secure.AppendChar($c) }
+    $secure.MakeReadOnly()
+    $secure
+}
+
 if ($PSCmdlet.ShouldProcess($keyBinPath, 'Write raw AES key')) {
     # WriteAllBytes rather than Set-Content -Encoding Byte: the -Encoding Byte
     # parameter was removed in PowerShell 6+, so the original lab line does not
     # run on anything current.
     [System.IO.File]::WriteAllBytes($keyBinPath, $key)
-    Add-Result $keyBinPath 'Raw AES key' $key.Length
+    AddResult -File $keyBinPath -Description 'Raw AES key' -Bytes $key.Length
 }
 
 if ($PSCmdlet.ShouldProcess($keyTxtPath, 'Write decimal-byte AES key')) {
     # The lab also kept the key as one decimal byte per line, which is what
     # Get-Content feeds back to -Key. Same key, second encoding.
     Set-Content -LiteralPath $keyTxtPath -Value $key -Encoding utf8
-    Add-Result $keyTxtPath 'Decimal-byte AES key' ((Get-Item -LiteralPath $keyTxtPath).Length)
+    AddResult -File $keyTxtPath -Description 'Decimal-byte AES key' `
+        -Bytes ((Get-Item -LiteralPath $keyTxtPath).Length)
 }
 
 if ($PSCmdlet.ShouldProcess($secretPath, 'Write encrypted SecureString')) {
-    $secure = ConvertTo-SecureString -String $demoSecret -AsPlainText -Force
+    $secure = NewSecureString -Character $demoSecret.ToCharArray()
     $cipher = ConvertFrom-SecureString -SecureString $secure -Key $key
     Set-Content -LiteralPath $secretPath -Value $cipher -NoNewline
-    Add-Result $secretPath 'Encrypted SecureString' ((Get-Item -LiteralPath $secretPath).Length)
+    AddResult -File $secretPath -Description 'Encrypted SecureString' `
+        -Bytes ((Get-Item -LiteralPath $secretPath).Length)
 }
 
 if ($PSCmdlet.ShouldProcess($passwordPath, 'Write encrypted credential password')) {
-    $securePw = ConvertTo-SecureString -String $demoPassword -AsPlainText -Force
+    $securePw = NewSecureString -Character $demoPassword.ToCharArray()
     $cred     = [System.Management.Automation.PSCredential]::new($demoUser, $securePw)
     $cipherPw = ConvertFrom-SecureString -SecureString $cred.Password -Key $key
     Set-Content -LiteralPath $passwordPath -Value $cipherPw -NoNewline
-    Add-Result $passwordPath 'Encrypted credential password' ((Get-Item -LiteralPath $passwordPath).Length)
+    AddResult -File $passwordPath -Description 'Encrypted credential password' `
+        -Bytes ((Get-Item -LiteralPath $passwordPath).Length)
 }
 
 $results
