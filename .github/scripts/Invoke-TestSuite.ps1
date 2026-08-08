@@ -66,12 +66,43 @@ if ($env:GITHUB_STEP_SUMMARY) {
 
 Write-Output "Passed: $($result.PassedCount)  Failed: $($result.FailedCount)  Skipped: $($result.SkippedCount)"
 
+$exitCode = 0
+
 if ($result.FailedCount -gt 0) {
     foreach ($test in $result.Failed) {
         Write-Output "FAILED: $($test.ExpandedPath)"
         Write-Output "        $($test.ErrorRecord)"
     }
-    exit 1
+    $exitCode = 1
 }
 
-exit 0
+# A file that throws during discovery contributes no tests and no failures, so
+# FailedCount alone stays 0 and the run reports green having never executed it.
+# That is exactly how a 5.1 leg passed with 63 tests while the 7 leg ran 88:
+# both Windows test files were dropped and nothing said so loudly enough.
+if ($result.FailedContainersCount -gt 0) {
+    Write-Output "DISCOVERY FAILED in $($result.FailedContainersCount) file(s):"
+    foreach ($container in $result.Containers) {
+        if (-not $container.Result -or $container.Result -eq 'Failed') {
+            Write-Output "  $($container.Item)"
+            foreach ($err in $container.ErrorRecord) { Write-Output "    $err" }
+        }
+    }
+    $exitCode = 1
+}
+
+# Tripwire against a whole category vanishing for a reason not covered above.
+# The Windows-tagged files must contribute tests on a Windows runner; if they
+# contribute none, something dropped them and the run is not trustworthy.
+if ($env:OS -eq 'Windows_NT') {
+    $windowsTests = @($result.Tests | Where-Object { $_.Path -match 'Windows' })
+    if ($windowsTests.Count -eq 0) {
+        Write-Output 'ERROR: no Windows-tagged tests ran on a Windows host.'
+        $exitCode = 1
+    }
+    else {
+        Write-Output "Windows-tagged tests executed: $($windowsTests.Count)"
+    }
+}
+
+exit $exitCode

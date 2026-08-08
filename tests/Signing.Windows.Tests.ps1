@@ -11,7 +11,10 @@
     by contacting DigiCert from CI.
 #>
 
-$script:IsWindowsHost = $IsWindows -or ($PSVersionTable.PSEdition -eq 'Desktop')
+# $env:OS, not $IsWindows: the latter does not exist in Windows PowerShell 5.1,
+# and Pester runs discovery under StrictMode, so referencing it throws and the
+# entire file is dropped from the run -- silently, while the suite still exits 0.
+$script:IsWindowsHost = ($env:OS -eq 'Windows_NT')
 
 Describe 'Authenticode signing on Windows' -Tag 'Windows' -Skip:(-not $script:IsWindowsHost) {
 
@@ -110,8 +113,20 @@ Describe 'Authenticode signing on Windows' -Tag 'Windows' -Skip:(-not $script:Is
             $p = MakeSampleScript 'tampered.ps1'
             Invoke-ScriptSigning -Path $p -Certificate $Cert -Confirm:$false | Out-Null
 
-            $content = Get-Content $p -Raw
-            Set-Content -LiteralPath $p -Value ($content -replace 'sample', 'tampered') -Encoding UTF8
+            # Tampered at the byte level, on purpose. Reading with Get-Content and
+            # rewriting with Set-Content -Encoding UTF8 changes the file's encoding
+            # -- PowerShell 7 writes UTF-8 without a BOM, 5.1 writes one -- and the
+            # rewritten file was reported NotSigned rather than HashMismatch,
+            # because the signature block was no longer parseable. That tests the
+            # encoding, not tamper detection.
+            #
+            # ISO-8859-1 maps bytes 0-255 to characters 1:1, so this round-trips any
+            # byte sequence losslessly, BOM and base64 signature block included.
+            # 'sample' -> 'tamper' is the same length, so nothing shifts.
+            $latin1 = [System.Text.Encoding]::GetEncoding('iso-8859-1')
+            $text   = $latin1.GetString([System.IO.File]::ReadAllBytes($p))
+            $text   = $text -replace 'sample', 'tamper'
+            [System.IO.File]::WriteAllBytes($p, $latin1.GetBytes($text))
 
             (Test-ScriptSignature -Path $p).Status | Should -Be 'HashMismatch'
         }

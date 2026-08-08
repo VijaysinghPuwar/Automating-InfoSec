@@ -93,7 +93,15 @@ function Invoke-ScriptSigning {
                 $changed = $false
                 $err     = ''
 
-                $alreadyGood = (("$($before.Status)" -eq 'Valid') -and
+                # Intact and signed by this certificate -- deliberately NOT
+                # "Status -eq 'Valid'". Valid additionally requires the signing
+                # certificate to chain to a trusted root on this machine, which a
+                # self-signed certificate never does, so keying idempotency on it
+                # meant every run re-signed every file. Trust is a property of the
+                # verifying machine; whether this file already carries this
+                # signature is a property of the file.
+                $intact = ("$($before.Status)" -notin @('NotSigned', 'HashMismatch'))
+                $alreadyGood = ($intact -and
                                 $before.SignerCertificate -and
                                 $before.SignerCertificate.Thumbprint -eq $Certificate.Thumbprint)
 

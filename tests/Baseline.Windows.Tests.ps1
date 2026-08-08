@@ -8,7 +8,10 @@
     Tagged 'Windows' and 'Destructive'. Skipped automatically off Windows.
 #>
 
-$script:IsWindowsHost = $IsWindows -or ($PSVersionTable.PSEdition -eq 'Desktop')
+# $env:OS, not $IsWindows: the latter does not exist in Windows PowerShell 5.1,
+# and Pester runs discovery under StrictMode, so referencing it throws and the
+# entire file is dropped from the run -- silently, while the suite still exits 0.
+$script:IsWindowsHost = ($env:OS -eq 'Windows_NT')
 
 Describe 'Security baseline on Windows' -Tag 'Windows', 'Destructive' -Skip:(-not $script:IsWindowsHost) {
 
