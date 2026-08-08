@@ -60,6 +60,48 @@ class of error as the leaked-secret README claiming files that were never commit
 
 ---
 
+## A lint gate reported clean while never reading the files it was added for
+
+**Symptom.** Two new CI scripts were added under `.github/scripts/`. PSScriptAnalyzer
+reported "clean across 26 files" — the same count as before they existed. Nothing
+failed. Nothing warned. The gate was green and the new code had never been read.
+
+**Cause.** `Get-ChildItem -Recurse` does not descend into dot-directories without
+`-Force`. `.github/` is a dot-directory, so every file in it was invisible to the
+file-discovery step, including the scripts that now run the entire test matrix.
+
+**Fix.** `-Force` on the discovery, plus an explicit `.git` filter so the linter
+does not wander into object storage. File count went 26 to 28 and stayed clean.
+
+**Why this one matters most.** The other entries here are bugs that announced
+themselves — a failing test, a wrong verdict, a broken parse. This one produced a
+*passing* result that meant nothing, and it was caught only because the file count
+did not move after adding two files. A quality gate that silently skips its inputs
+is worse than no gate: it converts "unverified" into "verified" on the dashboard
+while changing nothing about the code. Worth checking, for any gate: does its
+reported scope actually contain the thing you added it to catch? Count the files,
+not the exit code.
+
+---
+
+## GitHub rejects `shell:` with an expression, before any job starts
+
+**Symptom.** A workflow run failed in 0 seconds with no jobs, no logs and no
+annotation beyond "This run likely failed because of a workflow file issue". It
+reads like an outage rather than a syntax error.
+
+**Cause.** `shell: ${{ matrix.shell }}`. The `shell:` key accepts no contexts at
+all, so the file is rejected at parse time and nothing is scheduled. A YAML parser
+validates the file happily, because it is valid YAML — the violation is of the
+Actions schema, which YAML knows nothing about.
+
+**Fix.** Keep `shell:` static and select the interpreter inside the step, where
+`matrix` is available: `& '${{ matrix.exe }}' -File ./.github/scripts/...`.
+Validate workflows with `actionlint` rather than a YAML parser; it names the file,
+line, column and the reason.
+
+---
+
 ## Pester evaluates `-ForEach` before `BeforeAll` runs
 
 **Symptom.** A test generating one case per exported function produced a single
