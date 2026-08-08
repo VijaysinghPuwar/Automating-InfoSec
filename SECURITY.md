@@ -64,7 +64,7 @@ brew install gitleaks    # the hook warns and skips the content scan without it
 
 ## Reproducing the lab without secrets
 
-`Lab_4_Confidentiality/Script/generate-lab4-artifacts.ps1` regenerates equivalent
+`labs/04-confidentiality/scripts/generate-lab4-artifacts.ps1` regenerates equivalent
 key and ciphertext artifacts locally from values invented at random on each run, so
 the exercise stays reproducible without anything sensitive entering the repository.
 The files it writes are covered by all three controls above.
