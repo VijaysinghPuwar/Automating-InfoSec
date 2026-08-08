@@ -1,0 +1,150 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PESTER_VERSION: '5.7.1'
+
+jobs:
+
+  # Repository hygiene. Runs on Linux because none of these checks touch Windows:
+  # Test-ForbiddenPath and Test-ReadmeClaim are deliberately platform-agnostic.
+  repo-checks:
+    name: Secrets and README claims
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # gitleaks scans history, not just the tip
+
+      - name: Install gitleaks
+        run: |
+          VERSION=8.30.1
+          curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${VERSION}/gitleaks_${VERSION}_linux_x64.tar.gz" \
+            | tar -xz -C /usr/local/bin gitleaks
+          gitleaks version
+
+      - name: Scan full history for secrets
+        run: gitleaks git . --config .gitleaks.toml --no-banner --redact --exit-code 1
+
+      - name: Check for forbidden paths
+        shell: pwsh
+        run: ./tools/Test-ForbiddenPath.ps1
+
+      - name: Check README claims resolve
+        shell: pwsh
+        run: ./tools/Test-ReadmeClaim.ps1
+
+  lint:
+    name: PSScriptAnalyzer
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install PSScriptAnalyzer
+        shell: pwsh
+        run: |
+          Set-PSRepository PSGallery -InstallationPolicy Trusted
+          Install-Module PSScriptAnalyzer -Scope CurrentUser -Force
+
+      - name: Analyze
+        shell: pwsh
+        run: |
+          # Two files are excluded, both justified in PSScriptAnalyzerSettings.psd1:
+          # a signed evidence file that cannot be edited without invalidating its
+          # signature, and a verbatim lab transcript. No rules are disabled and no
+          # findings are suppressed -- a suppression that exists only to make CI
+          # green is a lie told to every future reader.
+          $exclude = @('myscript.ps1', 'lab04-transcript.ps1')
+          $files = Get-ChildItem -Path . -Recurse -Include *.ps1, *.psm1, *.psd1 |
+              Where-Object { $_.Name -notin $exclude }
+
+          $results = foreach ($f in $files) {
+              Invoke-ScriptAnalyzer -Path $f.FullName -Settings ./PSScriptAnalyzerSettings.psd1
+          }
+
+          if ($results) {
+              $results | Format-Table RuleName, Severity, ScriptName, Line, Message -AutoSize |
+                  Out-String -Width 250 | Write-Output
+              throw "PSScriptAnalyzer reported $(@($results).Count) finding(s)."
+          }
+          Write-Output "PSScriptAnalyzer clean across $($files.Count) files."
+
+  test:
+    name: Pester (${{ matrix.name }})
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # The module targets 5.1, so 5.1 is the contract. 7 is tested because
+          # code written for 5.1 should run there and that claim needs proving.
+          - name: Windows PowerShell 5.1
+            shell: powershell
+            suffix: ps51
+          - name: PowerShell 7
+            shell: pwsh
+            suffix: pwsh7
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Pester ${{ env.PESTER_VERSION }}
+        shell: ${{ matrix.shell }}
+        run: |
+          # Windows PowerShell 5.1 ships Pester 3.4.0 in-box and defaults to TLS 1.0,
+          # which PSGallery rejects. Both need fixing before Install-Module works.
+          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+          Get-PackageProvider -Name NuGet -ForceBootstrap | Out-Null
+          Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+          Install-Module Pester -RequiredVersion $env:PESTER_VERSION -Scope CurrentUser -Force -SkipPublisherCheck
+          Import-Module Pester -RequiredVersion $env:PESTER_VERSION
+          "Pester $((Get-Module Pester).Version) on PowerShell $($PSVersionTable.PSVersion)"
+
+      - name: Run tests
+        shell: ${{ matrix.shell }}
+        run: |
+          Import-Module Pester -RequiredVersion $env:PESTER_VERSION
+
+          # The Windows-tagged tests are destructive by design: they create and
+          # remove firewall rules, write HKLM, and sign files with a throwaway
+          # certificate. The runner is ephemeral and discarded after this job.
+          $config = New-PesterConfiguration
+          $config.Run.Path = './tests'
+          $config.Run.PassThru = $true
+          $config.Output.Verbosity = 'Detailed'
+          $config.TestResult.Enabled = $true
+          $config.TestResult.OutputFormat = 'NUnitXml'
+          $config.TestResult.OutputPath = "testresults-$env:SUFFIX.xml"
+
+          $result = Invoke-Pester -Configuration $config
+
+          "## Pester: $env:MATRIX_NAME" | Out-File $env:GITHUB_STEP_SUMMARY -Append
+          "- Passed: $($result.PassedCount)"   | Out-File $env:GITHUB_STEP_SUMMARY -Append
+          "- Failed: $($result.FailedCount)"   | Out-File $env:GITHUB_STEP_SUMMARY -Append
+          "- Skipped: $($result.SkippedCount)" | Out-File $env:GITHUB_STEP_SUMMARY -Append
+
+          if ($result.FailedCount -gt 0) {
+              throw "$($result.FailedCount) test(s) failed."
+          }
+        env:
+          SUFFIX: ${{ matrix.suffix }}
+          MATRIX_NAME: ${{ matrix.name }}
+
+      - name: Publish test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pester-${{ matrix.suffix }}
+          path: testresults-${{ matrix.suffix }}.xml
+          if-no-files-found: warn
