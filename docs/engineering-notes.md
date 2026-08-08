@@ -60,6 +60,43 @@ class of error as the leaked-secret README claiming files that were never commit
 
 ---
 
+## Pester evaluates `-ForEach` before `BeforeAll` runs
+
+**Symptom.** A test generating one case per exported function produced a single
+case named `gives System.Collections.Hashtable a synopsis`, which then failed on
+an empty synopsis. The function list was correct everywhere else in the file.
+
+**Cause.** Pester runs a discovery pass over the whole file before executing any
+`BeforeAll`. `-ForEach $Module.ExportedFunctions.Keys` was therefore evaluated
+while `$Module` was still unset, and iterating `$null` yields one meaningless
+case rather than an error.
+
+**Fix.** Read the manifest at file scope, outside `BeforeAll`, and drive
+`-ForEach` from that. Anything feeding `-ForEach`, `-TestCases` or a `Describe`
+name has to exist at discovery time.
+
+---
+
+## A regex character class silently ate hyphens from filenames
+
+**Symptom.** The README claims checker reported every hyphenated file as missing:
+`lab04-transcript.ps1` was reported as `lab04 transcript.ps1` not found. The files
+existed and the paths were correct.
+
+**Cause.** The class stripping box-drawing characters from directory-tree lines was
+written as `[─-╿|`+\\-]`. The trailing `-` was read as a literal member of the
+class, so every hyphen in every filename was replaced with a space before the
+lookup.
+
+**Fix.** Restricted the class to the Unicode box-drawing block, `[─-╿|]`,
+expressed as escapes so the file stays pure ASCII — which also cleared a
+`PSUseBOMForUnicodeEncodedFile` warning. The lesson is narrower than "be careful
+with regex": a character class assembled from several ranges plus loose literals
+is worth writing as explicit escapes, because the failure is silent and looks like
+a missing file rather than a bad pattern.
+
+---
+
 ## Path-based enumeration missed secrets that a rename had moved
 
 **Symptom.** A `git filter-repo` run against an explicit list of six secret paths

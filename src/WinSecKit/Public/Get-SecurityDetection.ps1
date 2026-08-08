@@ -54,9 +54,11 @@ function Get-SecurityDetection {
 
             if ($Technique -and $d.Technique -notin $Technique) { continue }
 
-            # Computed ahead of the literal rather than inline. An `if` expression
-            # inside a hashtable literal parses differently across PowerShell
-            # versions, and this module targets 5.1 while being developed on 7.
+            # Computed ahead of the literal rather than as inline `if` expressions.
+            # Not because the inline form is known to break on 5.1 -- that was not
+            # tested, and there is no 5.1 host here to test it on -- but because
+            # optional-key defaulting is clearer read as plain statements than as
+            # four conditionals wedged into a hashtable.
             $minimumCount  = $null
             $windowMinutes = $null
             $groupBy       = $null

@@ -55,9 +55,9 @@ function Get-SecurityBaseline {
 
             if ($CheckType -and $c.CheckType -notin $CheckType) { continue }
 
-            # Values computed before the literal: an `if` expression inside a
-            # hashtable literal parses differently across PowerShell versions and
-            # this module targets 5.1.
+            # Values computed before the literal rather than as inline `if`
+            # expressions -- for readability, not compatibility. Whether the inline
+            # form works on 5.1 was not tested; there is no 5.1 host here.
             $path = $null; $valueName = $null; $expected = $null; $kind = $null
             $profiles = @(); $displayName = $null; $protocol = $null; $localPort = $null
 
