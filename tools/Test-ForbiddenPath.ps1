@@ -66,6 +66,10 @@ $offenders = foreach ($file in $tracked) {
     }
 }
 
+# Emitted so CI can assert this gate actually inspected files rather than
+# reporting clean over an empty set.
+Write-Output "INPUTS_CHECKED=$(@($tracked).Count)"
+
 if ($offenders) {
     # Written to stderr, not Write-Error: $ErrorActionPreference is 'Stop', so
     # Write-Error would terminate and discard the formatter's buffered output --

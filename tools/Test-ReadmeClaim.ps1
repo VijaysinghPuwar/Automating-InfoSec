@@ -107,5 +107,6 @@ if ($offenders.Count -gt 0) {
     exit 1
 }
 
-[Console]::Error.WriteLine("README claims OK: $($readmes.Count) file(s) checked.")
+Write-Output "INPUTS_CHECKED=$(@($readmes).Count)"
+[Console]::Error.WriteLine("README claims OK: $(@($readmes).Count) file(s) checked.")
 exit 0

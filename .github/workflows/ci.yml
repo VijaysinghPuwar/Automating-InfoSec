@@ -36,15 +36,34 @@ jobs:
           gitleaks version
 
       - name: Scan full history for secrets
-        run: gitleaks git . --config .gitleaks.toml --no-banner --redact --exit-code 1
+        run: |
+          set -o pipefail
+          gitleaks git . --config .gitleaks.toml --no-banner --redact --exit-code 1 2>&1 | tee gitleaks.log
+          # A secret scan that goes quiet because it stopped looking is the
+          # failure mode this asserts against. Prove it walked the history.
+          COMMITS=$(grep -oE '[0-9]+ commits scanned' gitleaks.log | grep -oE '^[0-9]+' | head -1)
+          echo "gitleaks scanned ${COMMITS:-0} commits"
+          pwsh -File ./tools/Assert-GateCoverage.ps1 -Gate 'Gitleaks.Commits' -Observed "${COMMITS:-0}"
 
       - name: Check for forbidden paths
         shell: pwsh
-        run: ./tools/Test-ForbiddenPath.ps1
+        run: |
+          $out = & ./tools/Test-ForbiddenPath.ps1
+          $out | Write-Output
+          if ($LASTEXITCODE -ne 0) { throw 'Forbidden path check failed.' }
+          $n = ($out | Select-String 'INPUTS_CHECKED=(\d+)').Matches.Groups[1].Value
+          & ./tools/Assert-GateCoverage.ps1 -Gate 'ForbiddenPath.Files' -Observed ([int]$n)
+          if ($LASTEXITCODE -ne 0) { throw 'Gate coverage assertion failed.' }
 
       - name: Check README claims resolve
         shell: pwsh
-        run: ./tools/Test-ReadmeClaim.ps1
+        run: |
+          $out = & ./tools/Test-ReadmeClaim.ps1
+          $out | Write-Output
+          if ($LASTEXITCODE -ne 0) { throw 'README claims check failed.' }
+          $n = ($out | Select-String 'INPUTS_CHECKED=(\d+)').Matches.Groups[1].Value
+          & ./tools/Assert-GateCoverage.ps1 -Gate 'ReadmeClaim.Files' -Observed ([int]$n)
+          if ($LASTEXITCODE -ne 0) { throw 'Gate coverage assertion failed.' }
 
   lint:
     name: PSScriptAnalyzer
@@ -83,6 +102,11 @@ jobs:
               throw "PSScriptAnalyzer reported $(@($results).Count) finding(s)."
           }
           Write-Output "PSScriptAnalyzer clean across $($files.Count) files."
+
+          # Clean over an unexpectedly small set is not clean. This gate once
+          # reported 26 files while .github/scripts was invisible to it.
+          & ./tools/Assert-GateCoverage.ps1 -Gate 'PSScriptAnalyzer.Files' -Observed $files.Count
+          if ($LASTEXITCODE -ne 0) { throw 'Gate coverage assertion failed.' }
 
   test:
     name: Pester (${{ matrix.name }})

@@ -91,18 +91,19 @@ if ($result.FailedContainersCount -gt 0) {
     $exitCode = 1
 }
 
-# Tripwire against a whole category vanishing for a reason not covered above.
-# The Windows-tagged files must contribute tests on a Windows runner; if they
-# contribute none, something dropped them and the run is not trustworthy.
+# Coverage assertions. A suite that reports no failures has proved nothing unless
+# it also ran a plausible number of tests -- the 5.1 leg once reported
+# 'Passed: 63, Failed: 0' having dropped both Windows test files during discovery.
+$assert = Join-Path $PSScriptRoot '../../tools/Assert-GateCoverage.ps1'
+
+& $assert -Gate 'Pester.Tests' -Observed $result.PassedCount
+if ($LASTEXITCODE -ne 0) { $exitCode = 1 }
+
 if ($env:OS -eq 'Windows_NT') {
     $windowsTests = @($result.Tests | Where-Object { $_.Path -match 'Windows' })
-    if ($windowsTests.Count -eq 0) {
-        Write-Output 'ERROR: no Windows-tagged tests ran on a Windows host.'
-        $exitCode = 1
-    }
-    else {
-        Write-Output "Windows-tagged tests executed: $($windowsTests.Count)"
-    }
+    Write-Output "Windows-tagged tests executed: $($windowsTests.Count)"
+    & $assert -Gate 'Pester.WindowsTagged' -Observed $windowsTests.Count
+    if ($LASTEXITCODE -ne 0) { $exitCode = 1 }
 }
 
 exit $exitCode

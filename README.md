@@ -1,5 +1,7 @@
 # Automating InfoSec
 
+[![CI](https://github.com/VijaysinghPuwar/Automating-InfoSec/actions/workflows/ci.yml/badge.svg)](https://github.com/VijaysinghPuwar/Automating-InfoSec/actions/workflows/ci.yml)
+
 Windows security automation in PowerShell, with the lab reports that produced it.
 
 This began as coursework for Pace University CYB 631: four labs covering PowerShell
@@ -59,6 +61,34 @@ $ echo $?
 
 gitleaks covers the other half — content — and catches an exported credential even
 after it has been renamed to something innocuous.
+
+## Every gate proves it read something
+
+CI runs four gates: PSScriptAnalyzer, Pester on both PowerShell 5.1 and 7, gitleaks
+over full history, and a check that no README references a path that does not exist.
+
+Each one additionally asserts it processed a non-zero, expected number of inputs.
+That second assertion exists because three separate gates in this repository once
+reported clean while silently skipping the files they were meant to check — a
+linter that never descended into `.github/`, a test leg that dropped two files
+during discovery and still exited 0, and a secret scan that could have been
+narrowed until it stopped finding real secrets.
+
+A gate that finds no failures has proved nothing unless it also looked at
+something. Floors live in [`tools/gate-coverage.psd1`](tools/gate-coverage.psd1)
+and are enforced by
+[`tools/Assert-GateCoverage.ps1`](tools/Assert-GateCoverage.ps1):
+
+```
+$ ./tools/Assert-GateCoverage.ps1 -Gate 'Pester.Tests' -Observed 63
+GATE COVERAGE FAILURE: 'Pester.Tests' processed 63 inputs, floor is 80.
+Either the gate stopped seeing files it used to see, or the floor is stale.
+Investigate before lowering it -- see docs/engineering-notes.md.
+```
+
+That is the real number from the run where the 5.1 leg passed having executed none
+of the Windows tests. The full write-up is the first section of
+[docs/engineering-notes.md](docs/engineering-notes.md).
 
 ## Reproducing Lab 4 without secrets
 
