@@ -129,10 +129,16 @@ jobs:
 
           $result = Invoke-Pester -Configuration $config
 
-          "## Pester: $env:MATRIX_NAME" | Out-File $env:GITHUB_STEP_SUMMARY -Append
-          "- Passed: $($result.PassedCount)"   | Out-File $env:GITHUB_STEP_SUMMARY -Append
-          "- Failed: $($result.FailedCount)"   | Out-File $env:GITHUB_STEP_SUMMARY -Append
-          "- Skipped: $($result.SkippedCount)" | Out-File $env:GITHUB_STEP_SUMMARY -Append
+          # Add-Content -Encoding utf8, not Out-File: Windows PowerShell 5.1
+          # defaults Out-File to UTF-16, which GitHub renders as mojibake in the
+          # job summary. The 7 leg would have looked fine and the 5.1 leg would
+          # not, for no reason visible in the log.
+          @(
+              "## Pester: $env:MATRIX_NAME"
+              "- Passed: $($result.PassedCount)"
+              "- Failed: $($result.FailedCount)"
+              "- Skipped: $($result.SkippedCount)"
+          ) | Add-Content -Path $env:GITHUB_STEP_SUMMARY -Encoding utf8
 
           if ($result.FailedCount -gt 0) {
               throw "$($result.FailedCount) test(s) failed."
