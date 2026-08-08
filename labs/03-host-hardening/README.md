@@ -1,50 +1,8 @@
-# Lab 3 – Managing and Hardening Hosts
+# Lab 3 – Host hardening
 
-This lab focused on **Windows host hardening** using PowerShell, covering directory services, registry, WMI/CIM, and firewall configuration through both manual and automated methods.
-
----
-
-## Lab Objectives
-The lab introduced a series of exercises to explore **system administration and security automation**:
-
-1. **Environment Setup**
-   - Launched PowerShell ISE with administrator privileges  
-   - Configured execution policies (`RemoteSigned`, `Unrestricted`)  
-
-2. **Active Directory Lightweight Directory Services (AD LDS)**
-   - Installed and configured AD LDS via Server Manager  
-   - Created a unique instance with default ports  
-   - Added users and explored directory partitions  
-
-3. **Testing AD LDS with PowerShell**
-   - Verified ADAM instance and ADWS services  
-   - Queried containers, domains, and user information  
-
-4. **Windows Registry**
-   - Viewed registry hive keys with `regedit`  
-   - Retrieved keys and values via PowerShell commands  
-   - Focused on **HKCU** for user-specific data  
-
-5. **Windows Management Instrumentation (WMI) and CIM**
-   - Queried logical disks with `WMIC` and `Get-CimInstance`  
-   - Explored CIM classes and executed WQL queries  
-   - Retrieved system and process information  
-   - Launched a process with `Invoke-CimMethod`  
-
-6. **Firewall Configuration (Manual)**
-   - Used `New-NetFirewallRule` to block HTTP/HTTPS inbound traffic  
-   - Tested connectivity to confirm firewall effectiveness  
-   - Modified and removed firewall rules when needed  
-
-7. **Firewall Configuration with PowerShell**
-   - Automated firewall setup via script:
-     - Enabled firewall on all profiles (`Domain`, `Private`, `Public`)  
-     - Blocked **SSH (TCP 22)** inbound traffic  
-     - Blocked **DNS (TCP/UDP 53)** inbound traffic  
-   - Verified rules were created successfully  
-   - Explained benefits of scripting: **scalability, repeatability, compliance, and reduced human error**  
-
----
+Windows hardening with PowerShell: registry, WMI/CIM, and firewall configuration.
+The lab applied controls by hand, one command at a time; the code here turns that
+into a declarative baseline that can be audited, remediated and re-run.
 
 ## Contents
 
@@ -109,19 +67,17 @@ yours. See [tests/Baseline.Windows.Tests.ps1](../../tests/Baseline.Windows.Tests
 
 ---
 
-## Reflection
-- **What I liked:**  
-  The lab tied together multiple Windows hardening techniques, showing both manual and automated approaches. Automating firewall rules with PowerShell demonstrated the efficiency of scripting in enterprise environments.  
+## Why declarative
 
-- **Challenges:**  
-  - Running AD LDS setup required elevated privileges and correct VM environment  
-  - Debugging execution policy errors  
-  - Ensuring firewall rules applied to the right profiles (Domain vs Public)  
+The lab's firewall work was a sequence of `New-NetFirewallRule` calls typed at a
+prompt. That is fine once. It does not tell you whether a machine is currently
+compliant, it cannot be run twice safely, and it has no way to report drift.
 
-- **Takeaway:**  
-  This lab highlighted the importance of **automation in host hardening**. Using PowerShell ensures consistent, scalable, and auditable security configurations across Windows systems.  
-
----
+Separating the control *definition* from the *check* and the *fix* gets all three:
+`Test-SecurityBaseline` answers "is this host compliant" without touching anything,
+`Invoke-SecurityBaseline` converges it and reports what it changed, and running the
+second one twice produces no changes the second time. Adding a control is an edit
+to `Data/baseline.psd1`, not a new function.
 
 ## References
 - Microsoft. [Active Directory Lightweight Directory Services Overview](https://learn.microsoft.com/en-us/windows-server/identity/ad-lds/active-directory-lightweight-directory-services-overview)  

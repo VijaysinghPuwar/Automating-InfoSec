@@ -98,69 +98,54 @@ $stream.Close()
 
 ### 3) SecureString + AES key (round-trip)
 
-```powershell
-# Prompt secret
-$secure = Read-Host "Enter secret" -AsSecureString
-
-# Generate a 16-byte key and save as raw bytes
-$rkey = New-Object byte[] 16
-[Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($rkey)
-Set-Content .\keyfile.bin -Value $rkey -Encoding Byte
-
-# Encrypt SecureString with explicit key
-[byte[]]$keyIn = Get-Content .\keyfile.bin -Encoding Byte
-$cipher = ConvertFrom-SecureString -SecureString $secure -Key $keyIn
-Set-Content .\secret.enc -Value $cipher -NoNewline
-
-# Decrypt back
-$secure2  = Get-Content .\secret.enc -Raw | ConvertTo-SecureString -Key $keyIn
-$bstr2    = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure2)
-$plain    = [Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr2)
-"Decrypted plaintext: $plain"
-```
-
-### 4) Code signing
+Use the generator rather than the lab's original commands:
 
 ```powershell
-# Create a Code Signing cert
-$cert = New-SelfSignedCertificate -Subject "CN=CYB631 Code Signing" `
-  -Type CodeSigningCert -CertStoreLocation "Cert:\CurrentUser\My"
-
-# Sign a script and timestamp it (internet required)
-Set-AuthenticodeSignature .\scripts\sign_me.ps1 $cert `
-  -TimestampServer http://timestamp.digicert.com
-
-# Verify signature
-Get-AuthenticodeSignature .\scripts\sign_me.ps1
+./scripts/generate-lab4-artifacts.ps1 -WhatIf   # dry run
+./scripts/generate-lab4-artifacts.ps1
 ```
 
-### 5) CMS encryption (public key)
+The original lab commands are not reproduced here, for two reasons.
+
+They no longer run. `Set-Content -Encoding Byte` was removed in PowerShell 6, so
+the key-writing line fails on anything current. The generator uses
+`[System.IO.File]::WriteAllBytes` instead.
+
+More importantly, the lab's final step printed the decrypted plaintext to the
+console to prove the round-trip worked. That is what put a live credential into
+Figures 11 and 14 of the report, and the screenshot outlived the exercise by
+eleven months. Proving a decrypt succeeded does not require rendering the secret:
+compare lengths, compare a hash, or check that `ConvertTo-SecureString` returned
+without throwing. The generator emits only file names and byte counts.
+
+### 4) Code signing and 5) CMS
+
+Both are now module functions rather than loose commands, which is the point of
+the exercise surviving past the lab:
 
 ```powershell
-# Make a Document Encryption certificate
-$cms = New-SelfSignedCertificate -DnsName 'cyberusr' `
-  -CertStoreLocation "Cert:\CurrentUser\My" `
-  -KeyUsage KeyEncipherment,DataEncipherment,KeyAgreement `
-  -Type DocumentEncryptionCert
+Import-Module ./src/WinSecKit/WinSecKit.psd1
 
-# Encrypt to public key → p1.txt
-"This is a secret!" | Protect-CmsMessage -To $cms -OutFile .\evidence\p1.txt
+# Audit signatures across a tree -- the supply-chain check the lab implies
+Test-ScriptSignature -Path ./src -Recurse | Format-Table FileName, Status, SignerSubject
 
-# Decrypt (must be same profile that holds the private key)
-Unprotect-CmsMessage -Path .\evidence\p1.txt
+# Sign, with a dry run first
+$cert = Get-ChildItem Cert:\CurrentUser\My -CodeSigningCert | Select-Object -First 1
+Invoke-ScriptSigning -Path ./build -Certificate $cert -WhatIf
 ```
 
----
+Reading `Status` correctly matters more than it looks. `Valid` means the file is
+unmodified **and** the signing certificate chains to a root trusted on the machine
+doing the checking. A self-signed lab certificate never satisfies the second, so
+the honest expected result for `evidence/myscript.ps1` is `UnknownError`, not
+`Valid` — the signature is intact, the trust is not. `HashMismatch` is the one that
+means tampering. Conflating those two is a real bug this module had: idempotency
+was keyed on `Valid`, so every run re-signed every file.
 
-## Learning outcomes
-
-* Explain where hashing fits in **integrity** controls and prove equality via SHA-256.
-* Compare **DPAPI-style** implicit encryption vs explicit AES key management.
-* Understand Windows **execution policies**, script signing, and trust chains.
-* Apply **public-key cryptography** for at-rest/in-transit confidentiality with CMS.
-* Document security tasks with **reproducible commands** and concise evidence.
-
----
+The CMS exercise produced `evidence/p1.txt`, encrypted to `cyberusr`'s public key.
+It cannot be decrypted from this repository, because the private key never left the
+certificate store of the machine that generated it. That is the property being
+demonstrated, not a limitation.
 
 ## Security notes & gotchas
 

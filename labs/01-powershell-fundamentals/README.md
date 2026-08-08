@@ -1,51 +1,9 @@
-# Lab 1 – PowerShell Basics and Gathering Host Information
+# Lab 1 – PowerShell fundamentals
 
-This lab is to build a foundation in **PowerShell scripting** for system administration, host monitoring, and security automation.
-
----
-
-## Lab Objectives
-This lab introduced me to the fundamentals of PowerShell by covering:
-
-1. **PowerShell Basics**
-   - Launching and navigating the PowerShell environment  
-   - Verifying user context (`whoami`) and directories (`pwd`, `Get-Location`)  
-   - Creating and managing files with `New-Item`, `attrib`, and `Get-Content`  
-   - Example file: `.-nametest1.txt` → contains `Hello! World`
-
-2. **Object Operations**
-   - Demonstrated how PowerShell treats everything as an object  
-   - Used string methods (`.Length`, `.ToLower()`)  
-   - Inspected object members using `Get-Member`
-
-3. **Process Information**
-   - Listed all active processes with `Get-Process`  
-   - Filtered by name prefix (`gps -n w*`)  
-   - Stored and terminated Notepad processes using `.Kill()`  
-   - Queried processes with IDs ≥ 10,000 using pipelines
-
-4. **Useful Commands**
-   - Explored built-in help (`Get-Help`)  
-   - Listed available commands (`Get-Command`)  
-   - Investigated properties and methods of the `System.Diagnostics.Process` object
-
-5. **First PowerShell Script**
-   - Script to calculate the **sum of handles** for processes starting with "N":
-     ```powershell
-     $hcount = 0
-     foreach ($process in Get-Process -Name n* -ErrorAction SilentlyContinue) {
-         $hcount += $process.Handles
-     }
-     $hcount
-     ```
-   - Saved as `script1.ps1`  
-   - Verified with `Measure-Object` for accuracy  
-
-6. **CPU Monitoring Script**
-   - Wrote `cputime.ps1` to display the **top 5 CPU-consuming processes**  
-   - Output included process ID, name, and CPU usage  
-
----
+Introductory lab: the PowerShell object pipeline, process inspection, and a first
+script. This is the foundation the later labs build on and the least interesting
+of the four; the working code in this repository lives in
+[`src/WinSecKit`](../../src/WinSecKit).
 
 ## Contents
 
@@ -62,21 +20,29 @@ The full write-up is
 `cputime.ps1` and the scratch files created during the exercises are described in
 the report but were never committed.
 
----
+## What it covered
 
-## Reflection
-- **What I liked:**  
-  The lab progressed logically from basic commands → object operations → scripting. It showed how even simple scripts can be powerful for monitoring and automation.  
+Everything in PowerShell is an object, not text: `Get-Process` returns
+`System.Diagnostics.Process` instances whose properties can be filtered and
+aggregated in the pipeline rather than parsed out of formatted output. `script1.ps1`
+is the smallest demonstration of that — it sums a property across a filtered set:
 
-- **Challenges:**  
-  Faced issues with **execution policies**, requiring a process-scoped bypass to run scripts securely. Learned how PowerShell enforces script execution rules to balance automation with security.  
+```powershell
+$hcount = 0
+foreach ($process in Get-Process -Name n* -ErrorAction SilentlyContinue) {
+    $hcount += $process.Handles
+}
+$hcount
+```
 
-- **Takeaway:**  
-  This lab provided a solid foundation in PowerShell, emphasizing automation for **system administration, performance monitoring, and cybersecurity tasks**.  
-
----
+The one thing here with lasting consequence is the **execution policy**. Running
+even this required a process-scoped bypass, which is the same mechanism Lab 4
+returns to when it signs scripts so they run under `AllSigned` — the policy is not
+a security boundary against an attacker, but it is the control that makes code
+signing meaningful.
 
 ## References
-- Holmes, L. (2021). *Windows PowerShell Cookbook* (4th ed.). O’Reilly Media.  
-- Microsoft. (2023). [Table of basic PowerShell commands](https://devblogs.microsoft.com/scripting/table-of-basic-powershell-commands/)  
-- Pace University. (2023). *CYB 631 Lab 1: PowerShell Basics and Gathering Host Information*  
+
+- Holmes, L. (2021). *Windows PowerShell Cookbook* (4th ed.). O'Reilly Media.
+- Microsoft. [Table of basic PowerShell commands](https://devblogs.microsoft.com/scripting/table-of-basic-powershell-commands/)
+- Pace University. *CYB 631 Lab 1: PowerShell Basics and Gathering Host Information*

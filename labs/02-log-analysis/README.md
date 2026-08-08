@@ -1,49 +1,7 @@
-# Lab 2 – Analyzing Logs and Other Administrators’ Tasks
+# Lab 2 – Security event log analysis
 
-This lab builds upon the basics from Lab 1 and introduces more advanced **PowerShell scripting** concepts such as arrays, modules, event logs, and system administration automation.
-
----
-
-## Lab Objectives
-This lab focused on expanding PowerShell capabilities to support **system administration and security monitoring**:
-
-1. **PowerShell Objects and Data Structures**
-   - Worked with variables, arrays, and hashtables  
-   - Created multidimensional arrays and sorted string arrays  
-   - Practiced static methods from .NET classes
-
-2. **Files and Directories**
-   - Explored directory contents with `Get-ChildItem`  
-   - Compared files using `Compare-Object`  
-   - Filtered files modified in the last 10 days and sorted by size  
-
-3. **Parameterized Scripts**
-   - Reviewed and tested `Get-DiskUsage.ps1`  
-   - Added recursive directory size calculations with `-IncludeSubdirectories`  
-   - Created `showtoday.ps1` to display the date with optional `-ShowWeek` parameter  
-
-4. **Modules**
-   - Converted scripts into reusable PowerShell modules (`Show-Today.psm1`)  
-   - Verified module import and execution  
-
-5. **Event Logs**
-   - Used `Get-EventLog` and `Get-WinEvent` to analyze logs  
-   - Retrieved Security log entries and filtered system events  
-   - Emphasized the importance of log analysis for host security and compliance  
-
-6. **System Services**
-   - Listed running services with `Get-Service`  
-   - Sorted services by dependency count  
-   - Highlighted security implications of unnecessary/rogue services  
-
-7. **Administrative Script Development**
-   - Built **`sys_admin.ps1`** to automate host information collection:
-     - Records date/time and machine info  
-     - Summarizes Security log events  
-     - Optional `-ShowService` parameter lists top 5 services by dependency  
-   - Outputs reports to a `Reports/` directory with timestamped filenames  
-
----
+Event log analysis on Windows: reading the Security log, filtering it server-side,
+and turning a generic event dump into named detections.
 
 ## Contents
 
@@ -103,19 +61,19 @@ runner. See [tests/Detection.Tests.ps1](../../tests/Detection.Tests.ps1).
 
 ---
 
-## Reflection
-- **What I liked:**  
-  The lab connected multiple scripting techniques into a structured workflow. Creating `sys_admin.ps1` showed how small scripts can be combined into powerful automation tools.  
+## What the original lab got wrong
 
-- **Challenges:**  
-  - Managing execution policies (needed process-scoped bypass)  
-  - Accessing Security event logs required elevated privileges  
-  - Handling `DependentServices.Count` null values in the script  
+Two things worth stating, because the code here exists to correct them.
 
-- **Takeaway:**  
-  This lab demonstrated how PowerShell can be used for **log analysis, service monitoring, and automated reporting**—skills directly applicable to system hardening, incident response, and compliance.  
+It used `Get-EventLog`. That reads only the classic logs, so it cannot see
+`Microsoft-Windows-PowerShell/Operational` at all — two of the six detections below
+would have been impossible. It was also removed in PowerShell 6, so anything built
+on it stops running on a modern host.
 
----
+It filtered client-side. `Get-EventLog | Where-Object` pulls every record across
+the wire and discards most of them. `Get-WinEvent -FilterXPath` pushes the
+predicate into the event log service, which is the difference between a bounded
+query and reading an entire Security log to find five entries.
 
 ## References
 - Holmes, L. (2021). *Windows PowerShell Cookbook* (4th ed.). O’Reilly Media.  
