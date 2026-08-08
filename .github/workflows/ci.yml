@@ -66,9 +66,12 @@ jobs:
           # signature, and a verbatim lab transcript. No rules are disabled and no
           # findings are suppressed -- a suppression that exists only to make CI
           # green is a lie told to every future reader.
+          # -Force is required: without it Get-ChildItem skips dot-directories,
+          # so .github/scripts/*.ps1 would never be analysed and the lint job
+          # would report clean while ignoring the CI scripts themselves.
           $exclude = @('myscript.ps1', 'lab04-transcript.ps1')
-          $files = Get-ChildItem -Path . -Recurse -Include *.ps1, *.psm1, *.psd1 |
-              Where-Object { $_.Name -notin $exclude }
+          $files = Get-ChildItem -Path . -Recurse -Force -Include *.ps1, *.psm1, *.psd1 |
+              Where-Object { $_.Name -notin $exclude -and $_.FullName -notmatch '[\\/]\.git[\\/]' }
 
           $results = foreach ($f in $files) {
               Invoke-ScriptAnalyzer -Path $f.FullName -Settings ./PSScriptAnalyzerSettings.psd1
@@ -90,62 +93,37 @@ jobs:
         include:
           # The module targets 5.1, so 5.1 is the contract. 7 is tested because
           # code written for 5.1 should run there and that claim needs proving.
+          #
+          # The interpreter is selected inside the step rather than via `shell:`.
+          # `shell:` accepts no expressions at all -- `shell: ${{ matrix.shell }}`
+          # is rejected before any job starts, which surfaces as a run that fails
+          # in 0s with no logs and no jobs.
           - name: Windows PowerShell 5.1
-            shell: powershell
+            exe: powershell
             suffix: ps51
           - name: PowerShell 7
-            shell: pwsh
+            exe: pwsh
             suffix: pwsh7
     steps:
       - uses: actions/checkout@v4
 
       - name: Install Pester ${{ env.PESTER_VERSION }}
-        shell: ${{ matrix.shell }}
+        shell: pwsh
         run: |
-          # Windows PowerShell 5.1 ships Pester 3.4.0 in-box and defaults to TLS 1.0,
-          # which PSGallery rejects. Both need fixing before Install-Module works.
-          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-          Get-PackageProvider -Name NuGet -ForceBootstrap | Out-Null
-          Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
-          Install-Module Pester -RequiredVersion $env:PESTER_VERSION -Scope CurrentUser -Force -SkipPublisherCheck
-          Import-Module Pester -RequiredVersion $env:PESTER_VERSION
-          "Pester $((Get-Module Pester).Version) on PowerShell $($PSVersionTable.PSVersion)"
+          & '${{ matrix.exe }}' -NoProfile -ExecutionPolicy Bypass `
+              -File ./.github/scripts/Install-TestDependency.ps1 `
+              -PesterVersion '${{ env.PESTER_VERSION }}'
+          if ($LASTEXITCODE -ne 0) { throw "Pester install failed ($LASTEXITCODE)." }
 
       - name: Run tests
-        shell: ${{ matrix.shell }}
+        shell: pwsh
         run: |
-          Import-Module Pester -RequiredVersion $env:PESTER_VERSION
-
-          # The Windows-tagged tests are destructive by design: they create and
-          # remove firewall rules, write HKLM, and sign files with a throwaway
-          # certificate. The runner is ephemeral and discarded after this job.
-          $config = New-PesterConfiguration
-          $config.Run.Path = './tests'
-          $config.Run.PassThru = $true
-          $config.Output.Verbosity = 'Detailed'
-          $config.TestResult.Enabled = $true
-          $config.TestResult.OutputFormat = 'NUnitXml'
-          $config.TestResult.OutputPath = "testresults-$env:SUFFIX.xml"
-
-          $result = Invoke-Pester -Configuration $config
-
-          # Add-Content -Encoding utf8, not Out-File: Windows PowerShell 5.1
-          # defaults Out-File to UTF-16, which GitHub renders as mojibake in the
-          # job summary. The 7 leg would have looked fine and the 5.1 leg would
-          # not, for no reason visible in the log.
-          @(
-              "## Pester: $env:MATRIX_NAME"
-              "- Passed: $($result.PassedCount)"
-              "- Failed: $($result.FailedCount)"
-              "- Skipped: $($result.SkippedCount)"
-          ) | Add-Content -Path $env:GITHUB_STEP_SUMMARY -Encoding utf8
-
-          if ($result.FailedCount -gt 0) {
-              throw "$($result.FailedCount) test(s) failed."
-          }
-        env:
-          SUFFIX: ${{ matrix.suffix }}
-          MATRIX_NAME: ${{ matrix.name }}
+          & '${{ matrix.exe }}' -NoProfile -ExecutionPolicy Bypass `
+              -File ./.github/scripts/Invoke-TestSuite.ps1 `
+              -Suffix '${{ matrix.suffix }}' `
+              -LegName '${{ matrix.name }}' `
+              -PesterVersion '${{ env.PESTER_VERSION }}'
+          if ($LASTEXITCODE -ne 0) { throw "Test run failed ($LASTEXITCODE)." }
 
       - name: Publish test results
         if: always()
