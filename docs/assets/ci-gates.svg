@@ -8,7 +8,7 @@
 </style>
 <rect class="bg" x="1" y="1" width="878" height="368" rx="12"/>
 <text class="tt" x="24" y="34">Every CI gate proves it actually checked something</text>
-<text class="st" x="24" y="54">Inputs processed on the latest green run (bar) vs. the minimum floor that fails the build (tick). Each row has its own scale.</text>
+<text class="st" x="24" y="54">Inputs processed on a recent green CI run (bar) vs. the minimum floor that fails the build (tick). Each row has its own scale.</text>
 <text class="l" x="24" y="93">Pester tests, per PS leg</text><text class="u" x="24" y="108">tests</text>
 <rect class="trk" x="300" y="84" width="440" height="16" rx="4"/>
 <rect class="bar" x="300" y="84" width="382.6" height="16" rx="4"/>
@@ -27,8 +27,8 @@
 <text class="l" x="24" y="213">gitleaks history scan</text><text class="u" x="24" y="228">commits</text>
 <rect class="trk" x="300" y="204" width="440" height="16" rx="4"/>
 <rect class="bar" x="300" y="204" width="382.6" height="16" rx="4"/>
-<line class="fl" x1="587.0" y1="199" x2="587.0" y2="225"/>
-<text class="v" x="754" y="217">40</text><text class="u" x="790" y="217">floor 30</text>
+<line class="fl" x1="580.0" y1="199" x2="580.0" y2="225"/>
+<text class="v" x="754" y="217">41</text><text class="u" x="790" y="217">floor 30</text>
 <text class="l" x="24" y="253">Forbidden-path guard</text><text class="u" x="24" y="268">files</text>
 <rect class="trk" x="300" y="244" width="440" height="16" rx="4"/>
 <rect class="bar" x="300" y="244" width="382.6" height="16" rx="4"/>
