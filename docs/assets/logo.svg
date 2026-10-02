@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" role="img" aria-label="Automating InfoSec logo">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2a78d6"/>
+      <stop offset="1" stop-color="#1b4f9c"/>
+    </linearGradient>
+  </defs>
+  <!-- shield -->
+  <path d="M60 6 L104 22 V56 C104 84 85 104 60 114 C35 104 16 84 16 56 V22 Z" fill="url(#g)"/>
+  <path d="M60 14 L96 27 V56 C96 79 81 96 60 105 C39 96 24 79 24 56 V27 Z" fill="none" stroke="#ffffff" stroke-opacity=".25" stroke-width="2"/>
+  <!-- PowerShell-style prompt -->
+  <path d="M38 44 L56 58 L38 72" fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="62" y="68" width="22" height="8" rx="4" fill="#ffffff"/>
+</svg>

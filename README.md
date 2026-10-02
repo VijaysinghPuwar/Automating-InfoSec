@@ -1,120 +1,174 @@
-# Automating InfoSec
+<p align="center">
+  <img src="docs/assets/logo.svg" width="96" alt="Automating InfoSec logo">
+</p>
 
-[![CI](https://github.com/VijaysinghPuwar/Automating-InfoSec/actions/workflows/ci.yml/badge.svg)](https://github.com/VijaysinghPuwar/Automating-InfoSec/actions/workflows/ci.yml)
+<h1 align="center">Automating InfoSec</h1>
 
-Windows security automation in PowerShell, with the lab reports that produced it.
+<p align="center">
+  <b>WinSecKit: a PowerShell module that detects attacker activity in Windows event logs,<br>
+  audits and hardens hosts, and turns the results into a shareable HTML report.</b>
+</p>
 
-This began as coursework for Pace University CYB 631: four labs covering PowerShell
-fundamentals, Security event log analysis, host hardening, and confidentiality
-controls. The reports under `docs/reports/` are the graded submissions and are kept
-unmodified, apart from one redaction described below. Everything under `tools/` and
-`labs/*/scripts/` is code, and is expected to run.
+<p align="center">
+  <a href="https://github.com/VijaysinghPuwar/Automating-InfoSec/actions/workflows/ci.yml"><img src="https://github.com/VijaysinghPuwar/Automating-InfoSec/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <img src="https://img.shields.io/badge/PowerShell-5.1%20%7C%207-2a78d6?logo=powershell&logoColor=white" alt="PowerShell 5.1 and 7">
+  <img src="https://img.shields.io/badge/tests-88%20passing-1baf7a" alt="88 tests passing">
+  <img src="https://img.shields.io/badge/MITRE%20ATT%26CK-6%20techniques-e34948" alt="6 MITRE ATT&CK techniques">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-52514e" alt="MIT license"></a>
+</p>
 
-## Repository layout
+---
+
+## At a glance
+
+| | |
+|---|---|
+| **What it is** | A tested PowerShell module (`WinSecKit`, 9 commands) grown out of four graded Windows security labs (Pace University, CYB 631) |
+| **Detection** | 6 event log detections, each mapped to a MITRE ATT&CK technique |
+| **Hardening** | 6 declarative host controls that can be audited, then remediated with `-WhatIf` support |
+| **Integrity** | Authenticode signing and signature verification for scripts |
+| **Quality** | 88 Pester tests on both Windows PowerShell 5.1 and PowerShell 7, PSScriptAnalyzer with zero suppressions, gitleaks over full history |
+| **Incident handled** | Found, purged and documented a leaked credential in this repo's own history, then built three controls so it cannot happen again |
+
+**Skills shown:** PowerShell module design, Windows event log forensics, MITRE ATT&CK mapping,
+host hardening (registry, Windows Firewall), PKI and code signing, secret scanning,
+CI/CD on GitHub Actions, incident response and write-up.
+
+## How it works
+
+<p align="center">
+  <img src="docs/assets/pipeline.svg" alt="WinSecKit pipeline: event logs to detections to report, and host configuration to baseline audit to remediation to report">
+</p>
+
+Two pipelines share one report format. Every command emits plain objects, so results can be
+filtered, piped, or exported like any other PowerShell output.
+
+## Sample output
+
+Real output from `Test-SecurityDetection` piped into `Export-SecurityReport`. The input was a set
+of synthetic events that simulate an intrusion: a password spray, a new local admin,
+a download cradle, a persistence service and a wiped audit log.
+
+<p align="center">
+  <img src="docs/assets/detection-report.png" alt="HTML report listing six findings, from a failed logon burst to an audit log being cleared">
+</p>
+
+The report is a single HTML file with no external CSS, fonts or scripts, so it opens offline or as an
+email attachment. Event text is HTML encoded, because log messages contain attacker controlled input.
+
+## Detections
+
+| ID | Detects | Windows event | ATT&CK | Severity |
+|---|---|---|---|---|
+| WSK0001 | 5 or more failed logons for one account in 5 minutes | 4625 | T1110 Brute Force | High |
+| WSK0002 | Local account created | 4720 | T1136.001 Create Account | Medium |
+| WSK0003 | Member added to a security group | 4732 | T1098 Account Manipulation | High |
+| WSK0004 | Download or obfuscation patterns in a PowerShell script block | 4104 | T1059.001 PowerShell | High |
+| WSK0005 | New service installed | 7045 | T1543.003 Windows Service | Medium |
+| WSK0006 | Security audit log cleared | 1102 | T1070.001 Clear Event Logs | Critical |
+
+Rules are data, not code: they live in [`detections.psd1`](src/WinSecKit/Data/detections.psd1)
+and support three strategies (presence, threshold in a time window, and content pattern match).
+
+## Host baseline
+
+| ID | Control | Severity |
+|---|---|---|
+| WSB0001 | PowerShell script block logging enabled (feeds WSK0004) | High |
+| WSB0002 | Last signed-in user hidden at the logon screen | Medium |
+| WSB0003 | SMBv1 server disabled | High |
+| WSB0004 | Windows Firewall enabled on all three profiles | Critical |
+| WSB0005 | Inbound SSH (TCP 22) blocked | Medium |
+| WSB0006 | Inbound DNS (TCP 53) blocked | Medium |
+
+Each control carries a written rationale in [`baseline.psd1`](src/WinSecKit/Data/baseline.psd1).
+CIS IDs are left blank on purpose until each mapping is checked against the benchmark itself.
+
+## Quick start
+
+Requires Windows with PowerShell 5.1 or later. Run elevated to read the Security log.
+
+```powershell
+Import-Module ./src/WinSecKit/WinSecKit.psd1
+
+# Detect: scan the Security log and write a report
+Get-SecurityEventRecord -LogName Security |
+    Test-SecurityDetection |
+    Export-SecurityReport -Path findings.html -Title 'Logon anomalies'
+
+# Harden: audit first, preview the fix, then apply it
+Test-SecurityBaseline | Export-SecurityReport -Path baseline.html
+Invoke-SecurityBaseline -WhatIf
+Invoke-SecurityBaseline
+```
+
+## CI that proves it looked
+
+<p align="center">
+  <img src="docs/assets/ci-gates.svg" alt="Bar chart of inputs processed by each CI gate against its minimum floor">
+</p>
+
+Four gates run on every push: PSScriptAnalyzer, Pester on PowerShell 5.1 and 7, gitleaks over the
+full git history, and a check that every path a README mentions actually exists.
+
+A green check only means something if the gate actually read its inputs. Three gates in this
+repo once passed while silently skipping files: a linter that never entered `.github/`, a test
+run that dropped two Windows test files and still passed (63 of 88 tests ran), and a secret
+scan that could have been narrowed until it went quiet. So every gate now also asserts a minimum
+input count, defined in [`gate-coverage.psd1`](tools/gate-coverage.psd1). If coverage collapses,
+the build fails:
 
 ```
-labs/
-  01-powershell-fundamentals/   README + the handle-counting script
-  02-log-analysis/              README (report only; no scripts were committed)
-  03-host-hardening/            README (report only; no scripts were committed)
-  04-confidentiality/           README, lab transcript, artifact generator, signed evidence
-docs/
-  reports/                      The four graded lab reports, one copy each
-  engineering-notes.md          Failure modes worth writing down
-tools/                          Repository checks that run in CI and pre-commit
-SECURITY.md                     A credential was leaked here; what happened and what stops it
+$ ./tools/Assert-GateCoverage.ps1 -Gate 'Pester.Tests' -Observed 63
+GATE COVERAGE FAILURE: 'Pester.Tests' processed 63 inputs, floor is 80.
 ```
 
-Labs 2 and 3 have no scripts. That is not an oversight in this README — the scripts
-those reports describe were never committed, and each lab README says so plainly
-rather than listing files that do not exist.
+The full story is in [engineering notes](docs/engineering-notes.md).
 
-## Security tooling
+## Security incident: a leaked key, handled
 
-A previous version of this repository committed an AES key alongside the ciphertext
-it decrypted, which made the password trivially recoverable by anyone who cloned it.
-The credentials have been rotated and the artifacts purged from history. Three
-controls now prevent a recurrence, described in [SECURITY.md](SECURITY.md).
+An earlier version of this repo committed an AES key next to the ciphertext it decrypted, so
+anyone who cloned it could recover the password.
 
-To enable them locally:
+| Step | Action |
+|---|---|
+| Contain | Rotated the affected credentials, treating them as permanently disclosed |
+| Eradicate | Purged the files from all of git history with `git filter-repo`, then verified by scanning every remaining blob for the key bytes |
+| Redact | Blacked out the plaintext in two figures of the Lab 4 report PDF at the bitmap level |
+| Prevent | Added `.gitignore` rules, a filename guard (raw keys have no content signature), and gitleaks in both a pre-commit hook and CI |
+
+Details and lessons learned are in [SECURITY.md](SECURITY.md). To enable the local guard:
 
 ```bash
 git config core.hooksPath .githooks
 brew install gitleaks
 ```
 
-The path guard refuses key material by filename, which is the only way to catch it —
-a raw 16-byte AES key has no content signature to match on:
+## The labs behind it
+
+| Lab | Topic | Report |
+|---|---|---|
+| [01](labs/01-powershell-fundamentals) | PowerShell fundamentals | [PDF](docs/reports/cyb631-lab1-puwar.pdf) |
+| [02](labs/02-log-analysis) | Security event log analysis | [PDF](docs/reports/cyb631-lab2-puwar.pdf) |
+| [03](labs/03-host-hardening) | Host hardening: registry, CIM, firewall | [PDF](docs/reports/cyb631-lab3-puwar.pdf) |
+| [04](labs/04-confidentiality) | Hashing, AES, code signing, CMS encryption | [PDF](docs/reports/cyb631-lab4-puwar.pdf) |
+
+The reports are the graded submissions, unchanged apart from the Lab 4 redaction above.
+Lab 4 is reproducible with nothing sensitive in the repo. Run
+[`generate-lab4-artifacts.ps1`](labs/04-confidentiality/scripts/generate-lab4-artifacts.ps1)
+to produce fresh, random lab material each time; its output is blocked from being committed.
+
+## Repository layout
 
 ```
-$ ./tools/Test-ForbiddenPath.ps1
-
-Path        Pattern
-----        -------
-keyfile.bin (^|/)keyfile\.[^/]+$
-secret.enc  (^|/)secret\.enc$
-
-2 forbidden path(s) tracked. See SECURITY.md.
-$ echo $?
-1
+src/WinSecKit/   The module: Public commands, Private helpers, Data (rules and baseline)
+tests/           Pester suites; Windows only tests are tagged and counted
+labs/            One folder per lab: README, scripts, evidence
+docs/            Lab reports, engineering notes, README assets
+tools/           Repo checks used by CI and the pre-commit hook
+SECURITY.md      The credential leak and the controls against recurrence
 ```
-
-gitleaks covers the other half — content — and catches an exported credential even
-after it has been renamed to something innocuous.
-
-## Every gate proves it read something
-
-CI runs four gates: PSScriptAnalyzer, Pester on both PowerShell 5.1 and 7, gitleaks
-over full history, and a check that no README references a path that does not exist.
-
-Each one additionally asserts it processed a non-zero, expected number of inputs.
-That second assertion exists because three separate gates in this repository once
-reported clean while silently skipping the files they were meant to check — a
-linter that never descended into `.github/`, a test leg that dropped two files
-during discovery and still exited 0, and a secret scan that could have been
-narrowed until it stopped finding real secrets.
-
-A gate that finds no failures has proved nothing unless it also looked at
-something. Floors live in [`tools/gate-coverage.psd1`](tools/gate-coverage.psd1)
-and are enforced by
-[`tools/Assert-GateCoverage.ps1`](tools/Assert-GateCoverage.ps1):
-
-```
-$ ./tools/Assert-GateCoverage.ps1 -Gate 'Pester.Tests' -Observed 63
-GATE COVERAGE FAILURE: 'Pester.Tests' processed 63 inputs, floor is 80.
-Either the gate stopped seeing files it used to see, or the floor is stale.
-Investigate before lowering it -- see docs/engineering-notes.md.
-```
-
-That is the real number from the run where the 5.1 leg passed having executed none
-of the Windows tests. The full write-up is the first section of
-[docs/engineering-notes.md](docs/engineering-notes.md).
-
-## Reproducing Lab 4 without secrets
-
-```powershell
-./labs/04-confidentiality/scripts/generate-lab4-artifacts.ps1 -WhatIf   # dry run
-./labs/04-confidentiality/scripts/generate-lab4-artifacts.ps1
-```
-
-Generates a fresh AES key and matching ciphertext from values invented at random per
-run, so the exercise stays reproducible without anything sensitive entering the
-repository. The files it writes are ignored and blocked by the pre-commit hook.
-
-## Requirements
-
-Windows PowerShell 5.1 or later on Windows. The lab material uses `Get-WinEvent`,
-the `NetSecurity` cmdlets, and Authenticode, none of which exist on macOS or Linux.
-`tools/Test-ForbiddenPath.ps1` is the exception and runs anywhere PowerShell does.
-
-## A note on the reports
-
-Figures 11 and 14 of the Lab 4 report showed a decrypted plaintext credential in
-console output. This repository's copy has that value blacked out in the underlying
-bitmap. The graded submission to Pace was made before the redaction and is
-unaffected. No other content in any report was altered.
 
 ## License
 
-[MIT](LICENSE) for the code. The lab reports are academic coursework and are not
-covered by it.
+[MIT](LICENSE) for the code. The lab reports are academic coursework and are not covered by it.

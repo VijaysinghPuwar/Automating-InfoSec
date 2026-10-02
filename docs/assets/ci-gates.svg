@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 370" width="880" height="370" role="img" aria-label="CI gates: inputs each gate processed on the last run versus its minimum floor.">
+<style>
+.bg{fill:#fcfcfb;stroke:#e4e3df} .tt{font:600 16px -apple-system,Segoe UI,Helvetica,Arial,sans-serif;fill:#0b0b0b} .st{font:12px -apple-system,Segoe UI,Helvetica,Arial,sans-serif;fill:#52514e}
+.l{font:13px -apple-system,Segoe UI,Helvetica,Arial,sans-serif;fill:#0b0b0b} .u{font:12px -apple-system,Segoe UI,Helvetica,Arial,sans-serif;fill:#52514e} .v{font:600 13px -apple-system,Segoe UI,Helvetica,Arial,sans-serif;fill:#0b0b0b}
+.trk{fill:#efeeea} .bar{fill:#2a78d6} .fl{stroke:#0b0b0b;stroke-width:2} .lg{font:12px -apple-system,Segoe UI,Helvetica,Arial,sans-serif;fill:#52514e}
+@media (prefers-color-scheme: dark){ .bg{fill:#1a1a19;stroke:#33332f} .tt,.l,.v{fill:#ffffff} .st,.u,.lg{fill:#c3c2b7}
+.trk{fill:#2a2a28} .bar{fill:#3987e5} .fl{stroke:#ffffff} }
+</style>
+<rect class="bg" x="1" y="1" width="878" height="368" rx="12"/>
+<text class="tt" x="24" y="34">Every CI gate proves it actually checked something</text>
+<text class="st" x="24" y="54">Inputs processed on the latest green run (bar) vs. the minimum floor that fails the build (tick). Each row has its own scale.</text>
+<text class="l" x="24" y="93">Pester tests, per PS leg</text><text class="u" x="24" y="108">tests</text>
+<rect class="trk" x="300" y="84" width="440" height="16" rx="4"/>
+<rect class="bar" x="300" y="84" width="382.6" height="16" rx="4"/>
+<line class="fl" x1="647.8" y1="79" x2="647.8" y2="105"/>
+<text class="v" x="754" y="97">88</text><text class="u" x="790" y="97">floor 80</text>
+<text class="l" x="24" y="133">Windows-only tests run</text><text class="u" x="24" y="148">tests</text>
+<rect class="trk" x="300" y="124" width="440" height="16" rx="4"/>
+<rect class="bar" x="300" y="124" width="382.6" height="16" rx="4"/>
+<line class="fl" x1="594.3" y1="119" x2="594.3" y2="145"/>
+<text class="v" x="754" y="137">26</text><text class="u" x="790" y="137">floor 20</text>
+<text class="l" x="24" y="173">PSScriptAnalyzer</text><text class="u" x="24" y="188">files linted</text>
+<rect class="trk" x="300" y="164" width="440" height="16" rx="4"/>
+<rect class="bar" x="300" y="164" width="382.6" height="16" rx="4"/>
+<line class="fl" x1="657.1" y1="159" x2="657.1" y2="185"/>
+<text class="v" x="754" y="177">30</text><text class="u" x="790" y="177">floor 28</text>
+<text class="l" x="24" y="213">gitleaks history scan</text><text class="u" x="24" y="228">commits</text>
+<rect class="trk" x="300" y="204" width="440" height="16" rx="4"/>
+<rect class="bar" x="300" y="204" width="382.6" height="16" rx="4"/>
+<line class="fl" x1="587.0" y1="199" x2="587.0" y2="225"/>
+<text class="v" x="754" y="217">40</text><text class="u" x="790" y="217">floor 30</text>
+<text class="l" x="24" y="253">Forbidden-path guard</text><text class="u" x="24" y="268">files</text>
+<rect class="trk" x="300" y="244" width="440" height="16" rx="4"/>
+<rect class="bar" x="300" y="244" width="382.6" height="16" rx="4"/>
+<line class="fl" x1="578.3" y1="239" x2="578.3" y2="265"/>
+<text class="v" x="754" y="257">55</text><text class="u" x="790" y="257">floor 40</text>
+<text class="l" x="24" y="293">README claim check</text><text class="u" x="24" y="308">docs</text>
+<rect class="trk" x="300" y="284" width="440" height="16" rx="4"/>
+<rect class="bar" x="300" y="284" width="382.6" height="16" rx="4"/>
+<line class="fl" x1="628.0" y1="279" x2="628.0" y2="305"/>
+<text class="v" x="754" y="297">7</text><text class="u" x="790" y="297">floor 6</text>
+<rect class="bar" x="24" y="336" width="22" height="12" rx="3"/><text class="lg" x="52" y="346">Observed</text>
+<line class="fl" x1="130" y1="333" x2="130" y2="349"/><text class="lg" x="140" y="346">Floor (build fails below this)</text>
+</svg>
