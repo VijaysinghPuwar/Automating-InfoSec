@@ -15,7 +15,7 @@ function Get-SecurityBaseline {
         Return only controls with these ids. Accepts wildcards.
 
     .PARAMETER CheckType
-        Return only controls of these types: Registry, FirewallProfile, FirewallRule.
+        Return only controls of these types: Registry, FirewallProfile, FirewallRule, SmbServer.
 
     .EXAMPLE
         PS> Get-SecurityBaseline | Format-Table Id, Name, CheckType, Severity
@@ -33,7 +33,7 @@ function Get-SecurityBaseline {
         [SupportsWildcards()]
         [string[]]$Id,
 
-        [ValidateSet('Registry', 'FirewallProfile', 'FirewallRule')]
+        [ValidateSet('Registry', 'FirewallProfile', 'FirewallRule', 'SmbServer')]
         [string[]]$CheckType
     )
 
@@ -60,6 +60,7 @@ function Get-SecurityBaseline {
             # form works on 5.1 was not tested; there is no 5.1 host here.
             $path = $null; $valueName = $null; $expected = $null; $kind = $null
             $profiles = @(); $displayName = $null; $protocol = $null; $localPort = $null
+            $setting = $null
 
             if ($c.ContainsKey('Path'))          { $path        = [string]$c.Path }
             # 'Name' is the control's own title, so the registry value name is
@@ -71,6 +72,7 @@ function Get-SecurityBaseline {
             if ($c.ContainsKey('DisplayName'))   { $displayName = [string]$c.DisplayName }
             if ($c.ContainsKey('Protocol'))      { $protocol    = [string]$c.Protocol }
             if ($c.ContainsKey('LocalPort'))     { $localPort   = [string]$c.LocalPort }
+            if ($c.ContainsKey('Setting'))       { $setting     = [string]$c.Setting }
 
             [PSCustomObject]@{
                 PSTypeName    = 'WinSecKit.BaselineControl'
@@ -88,6 +90,7 @@ function Get-SecurityBaseline {
                 DisplayName   = $displayName
                 Protocol      = $protocol
                 LocalPort     = $localPort
+                Setting       = $setting
             }
         }
     }

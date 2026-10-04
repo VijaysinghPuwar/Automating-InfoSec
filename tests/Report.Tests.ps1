@@ -60,6 +60,15 @@ Describe 'Export-SecurityReport' {
         $html | Should -Match '<th>Beta</th>'
     }
 
+    It 'renders a hashtable as key=value pairs, not its type name' {
+        # Event records carry their fields in a Data hashtable.
+        $p = MakeOutPath
+        [PSCustomObject]@{ Data = @{ TargetUserName = 'bob'; LogonType = '3' } } | Export-SecurityReport -Path $p
+        $html = Get-Content $p -Raw
+        $html | Should -Not -Match 'System\.Collections\.Hashtable'
+        $html | Should -Match 'LogonType=3; TargetUserName=bob'
+    }
+
     It 'warns and writes nothing for an empty result set' {
         $p = MakeOutPath
         @() | Export-SecurityReport -Path $p -WarningAction SilentlyContinue

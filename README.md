@@ -12,7 +12,7 @@
 <p align="center">
   <a href="https://github.com/VijaysinghPuwar/Automating-InfoSec/actions/workflows/ci.yml"><img src="https://github.com/VijaysinghPuwar/Automating-InfoSec/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <img src="https://img.shields.io/badge/PowerShell-5.1%20%7C%207-2a78d6?logo=powershell&logoColor=white" alt="PowerShell 5.1 and 7">
-  <img src="https://img.shields.io/badge/tests-88%20passing-1baf7a" alt="88 tests passing">
+  <img src="https://img.shields.io/badge/tests-103%20passing-1baf7a" alt="103 tests passing">
   <img src="https://img.shields.io/badge/MITRE%20ATT%26CK-6%20techniques-e34948" alt="6 MITRE ATT&CK techniques">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-52514e" alt="MIT license"></a>
 </p>
@@ -27,7 +27,8 @@
 | **Detection** | 6 event log detections, each mapped to a MITRE ATT&CK technique |
 | **Hardening** | 6 declarative host controls that can be audited, then remediated with `-WhatIf` support |
 | **Integrity** | Authenticode signing and signature verification for scripts |
-| **Quality** | 88 Pester tests on both Windows PowerShell 5.1 and PowerShell 7, PSScriptAnalyzer with zero suppressions, gitleaks over full history |
+| **Quality** | 103 Pester tests on both Windows PowerShell 5.1 and PowerShell 7, PSScriptAnalyzer with zero suppressions, gitleaks over full history |
+| **Verified on Windows** | Run on a real Windows 11 machine and on CI runners. 10 bugs found and fixed. See the [test report](docs/test-report.md) |
 | **Incident handled** | Found, purged and documented a leaked credential in this repo's own history, then built three controls so it cannot happen again |
 
 **Skills shown:** PowerShell module design, Windows event log forensics, MITRE ATT&CK mapping,
@@ -76,7 +77,7 @@ and support three strategies (presence, threshold in a time window, and content 
 |---|---|---|
 | WSB0001 | PowerShell script block logging enabled (feeds WSK0004) | High |
 | WSB0002 | Last signed-in user hidden at the logon screen | Medium |
-| WSB0003 | SMBv1 server disabled | High |
+| WSB0003 | SMBv1 server disabled (read from the SMB server configuration) | High |
 | WSB0004 | Windows Firewall enabled on all three profiles | Critical |
 | WSB0005 | Inbound SSH (TCP 22) blocked | Medium |
 | WSB0006 | Inbound DNS (TCP 53) blocked | Medium |
@@ -86,13 +87,18 @@ CIS IDs are left blank on purpose until each mapping is checked against the benc
 
 ## Quick start
 
-Requires Windows with PowerShell 5.1 or later. Run elevated to read the Security log.
+Requires Windows with PowerShell 5.1 or later. Nothing to install.
+
+- Reading the System and PowerShell logs and auditing the baseline work without admin rights.
+- Reading the Security log and `Invoke-SecurityBaseline` need an elevated PowerShell.
 
 ```powershell
+git clone https://github.com/VijaysinghPuwar/Automating-InfoSec.git
+cd Automating-InfoSec
 Import-Module ./src/WinSecKit/WinSecKit.psd1
 
-# Detect: scan the Security log and write a report
-Get-SecurityEventRecord -LogName Security |
+# Detect: scan the last 24 hours of the Security log and write a report
+Get-SecurityEventRecord -LogName Security -StartTime (Get-Date).AddHours(-24) |
     Test-SecurityDetection |
     Export-SecurityReport -Path findings.html -Title 'Logon anomalies'
 
@@ -101,6 +107,22 @@ Test-SecurityBaseline | Export-SecurityReport -Path baseline.html
 Invoke-SecurityBaseline -WhatIf
 Invoke-SecurityBaseline
 ```
+
+If scripts are blocked, run `Set-ExecutionPolicy -Scope Process Bypass` first. It lasts for that window only.
+
+## Running the tests
+
+Needs Pester 5 or later (`Install-Module Pester -Scope CurrentUser`).
+
+```powershell
+# Safe on any machine: changes nothing
+Invoke-Pester ./tests/Module.Tests.ps1, ./tests/Detection.Tests.ps1, ./tests/Report.Tests.ps1, ./tests/EventRecord.Tests.ps1, ./tests/Remediation.Tests.ps1
+
+# Changes the registry, firewall and certificate store. Run only on a throwaway VM, elevated
+Invoke-Pester ./tests/Baseline.Windows.Tests.ps1, ./tests/Signing.Windows.Tests.ps1
+```
+
+CI runs all of them on a fresh Windows runner for every push.
 
 ## CI that proves it looked
 
@@ -120,7 +142,7 @@ the build fails:
 
 ```
 $ ./tools/Assert-GateCoverage.ps1 -Gate 'Pester.Tests' -Observed 63
-GATE COVERAGE FAILURE: 'Pester.Tests' processed 63 inputs, floor is 80.
+GATE COVERAGE FAILURE: 'Pester.Tests' processed 63 inputs, floor is 95.
 ```
 
 The full story is in [engineering notes](docs/engineering-notes.md).
@@ -139,9 +161,9 @@ anyone who cloned it could recover the password.
 
 Details and lessons learned are in [SECURITY.md](SECURITY.md). To enable the local guard:
 
-```bash
+```powershell
 git config core.hooksPath .githooks
-brew install gitleaks
+winget install Gitleaks.Gitleaks   # macOS: brew install gitleaks
 ```
 
 ## The labs behind it
@@ -164,7 +186,7 @@ to produce fresh, random lab material each time; its output is blocked from bein
 src/WinSecKit/   The module: Public commands, Private helpers, Data (rules and baseline)
 tests/           Pester suites; Windows only tests are tagged and counted
 labs/            One folder per lab: README, scripts, evidence
-docs/            Lab reports, engineering notes, README assets
+docs/            Lab reports, test report, engineering notes, README assets
 tools/           Repo checks used by CI and the pre-commit hook
 SECURITY.md      The credential leak and the controls against recurrence
 ```

@@ -13,13 +13,14 @@ function Invoke-SecurityBaseline {
         Every change is gated on ShouldProcess, so -WhatIf performs no writes and
         -Confirm prompts per control.
 
-        Before changing a registry value, the previous value is captured. Pass
-        -RollbackPath to write those to a JSON file that Restore can replay.
-        Firewall rules created by this function are recorded by DisplayName so
-        they can be removed; pre-existing rules are never modified.
+        Before each change the previous state is captured. Pass -RollbackPath to
+        write it to a JSON file. There is no restore command; the file is a
+        record for undoing changes by hand. Firewall rules are matched by
+        DisplayName. A non-compliant rule with the control's DisplayName is
+        removed and recreated; rules with other names are never touched.
 
-        WINDOWS ONLY, and requires an elevated session to write HKLM and the
-        firewall.
+        WINDOWS ONLY, and requires an elevated session to write HKLM, the
+        firewall and the SMB server configuration.
 
         NOT COVERED: Group Policy, AD LDS and domain password policy. Those need
         a domain and are absent from the baseline rather than silently skipped.
@@ -88,6 +89,16 @@ function Invoke-SecurityBaseline {
                                 }
                                 $null = New-ItemProperty -Path $c.Path -Name $c.ValueName `
                                     -Value $c.ExpectedValue -PropertyType $c.ValueKind -Force
+                                $changed = $true
+                            }
+
+                            'SmbServer' {
+                                $rollback.Add([PSCustomObject]@{
+                                    ControlId = $c.Id; CheckType = 'SmbServer'
+                                    Setting = $c.Setting; PreviousValue = $before.ActualValue
+                                })
+                                $smbParams = @{ $c.Setting = $c.ExpectedValue }
+                                Set-SmbServerConfiguration @smbParams -Force -Confirm:$false -ErrorAction Stop
                                 $changed = $true
                             }
 

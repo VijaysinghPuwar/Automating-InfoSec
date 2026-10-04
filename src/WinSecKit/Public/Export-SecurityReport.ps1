@@ -115,7 +115,12 @@ function Export-SecurityReport {
                 $value = ''
                 if ($row.PSObject.Properties.Name -contains $c) {
                     $raw = $row.$c
-                    if ($raw -is [System.Collections.IEnumerable] -and $raw -isnot [string]) {
+                    # Checked before IEnumerable: the pipeline does not unroll a
+                    # hashtable, so an event record's Data rendered as the type name.
+                    if ($raw -is [System.Collections.IDictionary]) {
+                        $value = ($raw.Keys | Sort-Object | ForEach-Object { "$_=$($raw[$_])" }) -join '; '
+                    }
+                    elseif ($raw -is [System.Collections.IEnumerable] -and $raw -isnot [string]) {
                         $value = ($raw | ForEach-Object { "$_" }) -join ', '
                     }
                     else {

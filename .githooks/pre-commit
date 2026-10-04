@@ -13,7 +13,7 @@ repo_root=$(git rev-parse --show-toplevel)
 patterns="$repo_root/tools/forbidden-paths.txt"
 status=0
 
-staged=$(git diff --cached --name-only --diff-filter=AM)
+staged=$(git diff --cached --name-only --diff-filter=ACMR)
 [ -z "$staged" ] && exit 0
 
 # --- 1. path check -----------------------------------------------------------
@@ -39,7 +39,7 @@ if command -v gitleaks >/dev/null 2>&1; then
     fi
 else
     echo "pre-commit: WARNING - gitleaks not installed, content scan skipped."
-    echo "  brew install gitleaks"
+    echo "  winget install Gitleaks.Gitleaks   (macOS: brew install gitleaks)"
 fi
 
 exit $status

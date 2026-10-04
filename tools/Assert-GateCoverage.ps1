@@ -28,8 +28,8 @@
     Path to the floors file. Defaults to gate-coverage.psd1 beside this script.
 
 .EXAMPLE
-    PS> ./tools/Assert-GateCoverage.ps1 -Gate 'Pester.Tests' -Observed 88
-    Passes: 88 meets the floor of 80.
+    PS> ./tools/Assert-GateCoverage.ps1 -Gate 'Pester.Tests' -Observed 103
+    Passes: 103 meets the floor of 95.
 
 .EXAMPLE
     PS> ./tools/Assert-GateCoverage.ps1 -Gate 'Pester.WindowsTagged' -Observed 0

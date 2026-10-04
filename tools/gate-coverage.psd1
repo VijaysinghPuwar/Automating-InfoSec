@@ -19,16 +19,17 @@
 
         # *.ps1/*.psm1/*.psd1 analysed, excluding the two documented evidence files.
         # Was 26 while .github/scripts was invisible to the linter; is 28 with it.
+        # Raised to 31 when the Windows verification added three files (33 total).
         # Set to 28, not lower: a floor of 25 would have let the very regression
         # this file exists to catch sail straight through at 26. A floor has to be
         # tight enough to fail on the actual historical bad value.
-        'PSScriptAnalyzer.Files' = 28
+        'PSScriptAnalyzer.Files' = 31
 
         # Total tests executed in one Pester leg.
-        'Pester.Tests' = 80
+        'Pester.Tests' = 95
 
         # Windows-tagged tests. The 5.1 leg once ran 0 of these and passed.
-        'Pester.WindowsTagged' = 20
+        'Pester.WindowsTagged' = 24
 
         # Commits gitleaks walked. Falling far below this means the scan was
         # scoped down, which is how a secret scan goes quiet without going clean.
@@ -38,6 +39,6 @@
         'ForbiddenPath.Files' = 40
 
         # Markdown files checked for unmet claims.
-        'ReadmeClaim.Files' = 6
+        'ReadmeClaim.Files' = 7
     }
 }

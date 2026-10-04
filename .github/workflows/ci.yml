@@ -24,7 +24,7 @@ jobs:
     name: Secrets and README claims
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0   # gitleaks scans history, not just the tip
 
@@ -69,7 +69,7 @@ jobs:
     name: PSScriptAnalyzer
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install PSScriptAnalyzer
         shell: pwsh
@@ -108,6 +108,17 @@ jobs:
           & ./tools/Assert-GateCoverage.ps1 -Gate 'PSScriptAnalyzer.Files' -Observed $files.Count
           if ($LASTEXITCODE -ne 0) { throw 'Gate coverage assertion failed.' }
 
+      # The repo checks above run on Linux with PowerShell 7. These scripts also
+      # claim 5.1 support, and Test-ReadmeClaim once failed only on 5.1 because
+      # 5.1 reads BOM-less UTF-8 as ANSI.
+      - name: Repo checks on Windows PowerShell 5.1
+        shell: powershell
+        run: |
+          ./tools/Test-ReadmeClaim.ps1
+          if ($LASTEXITCODE -ne 0) { throw 'README claims check failed on 5.1.' }
+          ./tools/Test-ForbiddenPath.ps1
+          if ($LASTEXITCODE -ne 0) { throw 'Forbidden path check failed on 5.1.' }
+
   test:
     name: Pester (${{ matrix.name }})
     runs-on: windows-latest
@@ -129,7 +140,7 @@ jobs:
             exe: pwsh
             suffix: pwsh7
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install Pester ${{ env.PESTER_VERSION }}
         shell: pwsh
@@ -151,7 +162,7 @@ jobs:
 
       - name: Publish test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: pester-${{ matrix.suffix }}
           path: testresults-${{ matrix.suffix }}.xml

@@ -59,7 +59,8 @@ The hook is not active until you point git at it. This is per-clone:
 
 ```bash
 git config core.hooksPath .githooks
-brew install gitleaks    # the hook warns and skips the content scan without it
+winget install Gitleaks.Gitleaks   # Windows; macOS: brew install gitleaks
+# Without gitleaks the hook warns and skips the content scan.
 ```
 
 ## Reproducing the lab without secrets
