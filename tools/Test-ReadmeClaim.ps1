@@ -54,7 +54,9 @@ $readmes = Get-ChildItem -LiteralPath $root -Recurse -Filter '*.md' |
     Where-Object { $_.FullName -notmatch '[\\/]\.git[\\/]' }
 
 foreach ($md in $readmes) {
-    $text = Get-Content -LiteralPath $md.FullName -Raw
+    # -Encoding UTF8: Windows PowerShell 5.1 reads BOM-less files as ANSI, which
+    # mangles the tree characters and reported every Contents entry as missing.
+    $text = Get-Content -LiteralPath $md.FullName -Raw -Encoding UTF8
 
     # --- 1. relative markdown links -----------------------------------------
     foreach ($m in [regex]::Matches($text, '\[[^\]]*\]\(([^)]+)\)')) {
