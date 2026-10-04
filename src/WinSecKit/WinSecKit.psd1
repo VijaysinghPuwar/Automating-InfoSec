@@ -10,9 +10,9 @@
     # 5.1 also runs on 7; the reverse is not true. CI exercises both.
     PowerShellVersion = '5.1'
 
-    # Windows only. Get-WinEvent, the NetSecurity cmdlets and Authenticode do not
-    # exist on macOS or Linux. Declared so PowerShellGet refuses to install this
-    # where it cannot work.
+    # Desktop is Windows PowerShell 5.1, Core is PowerShell 7. Core also runs on
+    # macOS and Linux, so this does not stop an install there. The event log and
+    # signing commands check for their cmdlets and throw a clear error instead.
     CompatiblePSEditions = @('Desktop', 'Core')
 
     FunctionsToExport = @(

@@ -67,6 +67,14 @@ Describe 'Security baseline on Windows' -Tag 'Windows', 'Destructive' -Skip:(-no
             $r.Compliant | Should -Not -Contain $true
         }
 
+        It 'reads SMBv1 state from the SMB server configuration' {
+            # The old registry check failed every host where the SMB1 value is
+            # absent, which is the default on Windows 10 1709+ and 11.
+            $r = Get-SecurityBaseline -Id 'WSB0003' | Test-SecurityBaseline
+            $r.Compliant | Should -Be (-not (Get-SmbServerConfiguration).EnableSMB1Protocol)
+            $r.Detail | Should -Match 'EnableSMB1Protocol'
+        }
+
         It 'does not create the rules it audited' {
             # The audit must be inert. If merely looking created the rule, the
             # remediation test below would pass for the wrong reason.
@@ -178,6 +186,37 @@ Describe 'Security baseline on Windows' -Tag 'Windows', 'Destructive' -Skip:(-no
         It 'returns nothing rather than throwing when no events match' {
             $recs = @(Get-SecurityEventRecord -LogName System -EventId 999999 -MaxEvents 5)
             $recs.Count | Should -Be 0
+        }
+
+        It 'returns recent events when filtered by StartTime' {
+            # The StartTime XPath once matched nothing, so this returned 0 on
+            # every host while looking like a quiet log.
+            $since = (Get-Date).AddDays(-30)
+            $direct = @(Get-WinEvent -FilterHashtable @{ LogName = 'System'; StartTime = $since } -MaxEvents 20 -ErrorAction SilentlyContinue)
+            $recs = @(Get-SecurityEventRecord -LogName System -StartTime $since -MaxEvents 20)
+            $recs.Count | Should -Be $direct.Count
+            $recs.Count | Should -BeGreaterThan 0
+            foreach ($r in $recs) { $r.TimeCreated | Should -BeGreaterOrEqual $since }
+        }
+
+        It 'returns nothing for a StartTime in the future' {
+            @(Get-SecurityEventRecord -LogName System -StartTime (Get-Date).AddHours(1) -MaxEvents 5).Count |
+                Should -Be 0
+        }
+
+        It 'keeps every named EventData field of real events' {
+            $byId = @{}
+            foreach ($e in Get-WinEvent -LogName System -MaxEvents 300) { $byId[$e.RecordId] = $e }
+            $compared = 0
+            foreach ($r in Get-SecurityEventRecord -LogName System -MaxEvents 300) {
+                if (-not $byId.ContainsKey($r.RecordId)) { continue }
+                $named = @(([xml]$byId[$r.RecordId].ToXml()).GetElementsByTagName('Data') |
+                    Where-Object { $_.GetAttribute('Name') } |
+                    ForEach-Object { $_.GetAttribute('Name') } | Select-Object -Unique).Count
+                $r.Data.Count | Should -Be $named -Because "record $($r.RecordId) (event $($r.Id))"
+                $compared++
+            }
+            $compared | Should -BeGreaterThan 0
         }
 
         It 'feeds real records through the detection pipeline' {

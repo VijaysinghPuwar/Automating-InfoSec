@@ -100,8 +100,10 @@ $assert = Join-Path $PSScriptRoot '../../tools/Assert-GateCoverage.ps1'
 if ($LASTEXITCODE -ne 0) { $exitCode = 1 }
 
 if ($env:OS -eq 'Windows_NT') {
-    $windowsTests = @($result.Tests | Where-Object { $_.Path -match 'Windows' })
-    Write-Output "Windows-tagged tests executed: $($windowsTests.Count)"
+    # Passed only. $result.Tests also holds skipped tests, so a Windows file
+    # skipped in full would still have met the floor.
+    $windowsTests = @($result.Passed | Where-Object { $_.Path -match 'Windows' })
+    Write-Output "Windows-tagged tests passed: $($windowsTests.Count)"
     & $assert -Gate 'Pester.WindowsTagged' -Observed $windowsTests.Count
     if ($LASTEXITCODE -ne 0) { $exitCode = 1 }
 }

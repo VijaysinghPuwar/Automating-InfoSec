@@ -74,10 +74,12 @@ function Get-SecurityEventRecord {
         }
 
         if ($PSBoundParameters.ContainsKey('StartTime')) {
-            # XPath timediff works in milliseconds relative to now.
+            # XPath timediff works in milliseconds relative to now. @SystemTime is
+            # an attribute of TimeCreated, not of System, so the predicate must be
+            # scoped to TimeCreated. Unscoped, it matched no event at all.
             $ms = [int64]((Get-Date) - $StartTime).TotalMilliseconds
             if ($ms -lt 0) { $ms = 0 }
-            $predicates.Add("timediff(@SystemTime) <= $ms")
+            $predicates.Add("TimeCreated[timediff(@SystemTime) <= $ms]")
         }
 
         $xpath = '*'
@@ -98,8 +100,9 @@ function Get-SecurityEventRecord {
             $events = Get-WinEvent @params
         }
         catch [System.Exception] {
-            # 'No events were found' is a normal empty result, not a failure.
-            if ($_.Exception.Message -match 'No events were found') {
+            # No matching events is a normal empty result, not a failure. Matched
+            # on the error id, not the message, which is localized.
+            if ($_.FullyQualifiedErrorId -like 'NoMatchingEventsFound*') {
                 Write-Verbose "No events matched in '$LogName'."
                 return
             }
@@ -109,10 +112,7 @@ function Get-SecurityEventRecord {
         foreach ($e in $events) {
             $data = @{}
             try {
-                $xml = [xml]$e.ToXml()
-                foreach ($node in $xml.Event.EventData.Data) {
-                    if ($node.Name) { $data[$node.Name] = $node.'#text' }
-                }
+                $data = ConvertFrom-WinSecKitEventXml -Xml $e.ToXml()
             }
             catch {
                 # Some providers emit EventData without a named schema. The record

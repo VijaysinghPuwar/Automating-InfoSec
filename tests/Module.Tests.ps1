@@ -118,7 +118,7 @@ Describe 'Baseline definitions' {
 
     It 'uses only implemented check types' {
         foreach ($c in Get-SecurityBaseline) {
-            $c.CheckType | Should -BeIn @('Registry', 'FirewallProfile', 'FirewallRule')
+            $c.CheckType | Should -BeIn @('Registry', 'FirewallProfile', 'FirewallRule', 'SmbServer')
         }
     }
 }

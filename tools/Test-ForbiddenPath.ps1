@@ -49,7 +49,9 @@ if (-not $patterns) {
 
 # git ls-files rather than Get-ChildItem: only tracked content can leak, and it
 # keeps ignored/untracked scratch files from failing a developer's local run.
-$tracked = & git ls-files
+# -C the repo root: run from a subdirectory, plain ls-files lists only that
+# subdirectory and the rest of the tree goes unchecked.
+$tracked = & git -C (Split-Path $PSScriptRoot -Parent) ls-files
 if ($LASTEXITCODE -ne 0) {
     throw 'git ls-files failed; is this a git repository?'
 }

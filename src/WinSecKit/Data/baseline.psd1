@@ -18,6 +18,7 @@
       Registry        - value at Path\Name equals ExpectedValue
       FirewallProfile - the named profile has Enabled = True
       FirewallRule    - an enabled inbound Block rule exists for Protocol/LocalPort
+      SmbServer       - Get-SmbServerConfiguration's Setting equals ExpectedValue
 #>
 @{
     SchemaVersion = 1
@@ -50,11 +51,13 @@
         @{
             Id            = 'WSB0003'
             Name          = 'SMBv1 server disabled'
-            CheckType     = 'Registry'
-            Path          = 'HKLM:\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters'
-            Name_         = 'SMB1'
-            ExpectedValue = 0
-            ValueKind     = 'DWord'
+            # Read through Get-SmbServerConfiguration, not the LanmanServer SMB1
+            # registry value. That value is absent by default on Windows 10 1709+
+            # and 11, where SMBv1 is already off, so a registry check failed every
+            # modern host.
+            CheckType     = 'SmbServer'
+            Setting       = 'EnableSMB1Protocol'
+            ExpectedValue = $false
             Severity      = 'High'
             CisId         = ''
             Rationale     = 'SMBv1 is unauthenticated, unencrypted and the transport EternalBlue used.'

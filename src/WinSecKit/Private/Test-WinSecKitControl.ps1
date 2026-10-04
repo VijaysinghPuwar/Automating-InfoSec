@@ -7,7 +7,8 @@ function Test-WinSecKitControl {
         means. Invoke- calls this before acting and again afterwards; a remediation
         that does not flip this function's verdict is a failed remediation.
 
-        WINDOWS ONLY. Reads HKLM and the NetSecurity cmdlets.
+        WINDOWS ONLY. Reads HKLM, the NetSecurity cmdlets and the SMB server
+        configuration.
     #>
     [CmdletBinding()]
     [OutputType([PSCustomObject])]
@@ -35,19 +36,37 @@ function Test-WinSecKitControl {
             }
         }
 
+        'SmbServer' {
+            try {
+                $config = Get-SmbServerConfiguration -ErrorAction Stop
+                $actual = $config.$($Control.Setting)
+                $compliant = ($actual -eq $Control.ExpectedValue)
+                $detail = "SMB server $($Control.Setting) = $actual (expected $($Control.ExpectedValue))"
+            }
+            catch {
+                $actual = $null
+                $compliant = $false
+                $detail = "SMB server configuration unreadable: $_"
+            }
+        }
+
         'FirewallProfile' {
             $disabled = [System.Collections.Generic.List[string]]::new()
+            $enabled  = [System.Collections.Generic.List[string]]::new()
             foreach ($p in $Control.Profile) {
                 try {
                     $prof = Get-NetFirewallProfile -Profile $p -ErrorAction Stop
-                    if (-not $prof.Enabled) { $disabled.Add($p) }
+                    if ($prof.Enabled) { $enabled.Add($p) } else { $disabled.Add($p) }
                 }
                 catch {
                     $disabled.Add("$p (unreadable)")
                 }
             }
             $compliant = ($disabled.Count -eq 0)
-            $actual    = ($Control.Profile | Where-Object { $_ -notin $disabled }) -join ','
+            # Built from what was read as enabled. Filtering Profile against
+            # $disabled kept unreadable profiles, since 'Public' is not
+            # 'Public (unreadable)'.
+            $actual    = $enabled -join ','
             if ($compliant) {
                 $detail = "All profiles enabled: $($Control.Profile -join ', ')"
             }
